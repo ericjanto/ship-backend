@@ -1,0 +1,9 @@
+/preprocessed/
+/data/
+/indexes/
+/__pycache__/
+/.idea/
+*.txt
+*.pdf
+
+!englishStopWords.txt
