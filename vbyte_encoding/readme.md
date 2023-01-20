@@ -3,11 +3,11 @@ Expected Positional Index Structure:
 - Document Count (Integer)
 
 - HashMap {
-    - Term 
+    - Term (String)
     - HashMap {
-        - Document ID
+        - Document ID (String)
         - List {
-            - Position
+            - Position (String)
         }
     }
 }
@@ -29,13 +29,13 @@ V-Byte Encoding format:
 
     For document in documents:
 
-        - Doc ID (v-bytes, relative to previous doc ID)
+        - Doc ID (v-bytes)
 
         - number of occurences in document (v-bytes)
 
         for occurence in occurences:
 
-            - term position (v-bytes)
+            - term position (v-bytes, relative to last position)
 
 Trade offs:
 
