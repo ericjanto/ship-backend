@@ -2,6 +2,8 @@ Expected Positional Index Structure:
 
 - Document Count (Integer)
 
+- Document IDs (Set)
+
 - HashMap {
     - Term (String)
     - HashMap {
@@ -15,7 +17,6 @@ Expected Positional Index Structure:
 
 V-Byte Encoding format:
 
-- Document Count (v-bytes)
 
 - Term count (v-bytes)
 
@@ -25,7 +26,7 @@ V-Byte Encoding format:
 
     - Term (regular bytes)
     
-    - document frequency (v-bytes)
+    - document frequency (v-bytes) (MUST BE AN INTEGER)
 
     For document in documents:
 
@@ -36,6 +37,12 @@ V-Byte Encoding format:
         for occurence in occurences:
 
             - term position (v-bytes, relative to last position)
+
+Notes:
+
+    Due to how positional inverted indexes will be read in, there is no reason
+    to write the document count and set of document IDs to the file.
+
 
 Trade offs:
 
