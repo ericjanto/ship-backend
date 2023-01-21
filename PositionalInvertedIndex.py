@@ -95,3 +95,11 @@ class PositionalInvertedIndex():
 
     def writeToXMLFile(self, filename):
         pass
+
+    def __eq__(self, other):
+        if not isinstance(other, PositionalInvertedIndex):
+            return False
+
+        return (self.terms == other.terms 
+                and self.documentIDs == other.documentIDs 
+                and self.documentCount == other.documentCount)
