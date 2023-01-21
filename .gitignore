@@ -5,5 +5,6 @@
 /.idea/
 *.txt
 *.pdf
+*.delta
 
 !englishStopWords.txt
