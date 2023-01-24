@@ -2,6 +2,8 @@ from PositionalInvertedIndexFactory import PositionalInvertedIndexFactory
 from indexCompressor import indexToVBytes
 from indexDecompressor import IndexDecompressor
 
+from PositionalInvertedIndexLoader import PositionalInvertedIndexLoader
+
 
 if __name__ == "__main__":
 
@@ -32,3 +34,7 @@ if __name__ == "__main__":
     decompressedIndex = decompressor.toIndex()
 
     print(index == decompressedIndex)
+
+    index2 = PositionalInvertedIndexLoader.loadFromCompressedFile("index-compression_test.delta")
+
+    print(index == index2 and index2 == decompressedIndex)

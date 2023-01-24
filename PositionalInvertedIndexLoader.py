@@ -2,6 +2,8 @@ import os
 
 from PositionalInvertedIndex import PositionalInvertedIndex
 
+from indexDecompressor import IndexDecompressor
+
 
 class PositionalInvertedIndexLoader():
 
@@ -32,6 +34,17 @@ class PositionalInvertedIndexLoader():
                     for position in occurences:
                         index.insertTermInstance(currentTerm, docID, position)
         return index
+
+    @staticmethod
+    def loadFromCompressedFile(filename):
+        if not os.path.exists(filename):
+            raise FileNotFoundError(f"{filename} does not exist")
+        with open (filename, "rb") as f:
+            compressedIndex = f.read()
+
+        decompressor = IndexDecompressor(compressedIndex)
+
+        return decompressor.toIndex()
 
 
 
