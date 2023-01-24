@@ -44,25 +44,7 @@ class PositionalInvertedIndex():
         if term not in self.terms:
             return []
         return list(self.terms[term].keys())
-
-    def writeToTxtFile(self, filename):
-        # TODO: This is currently dependent on the directory
-        #       it is meant to write to existing, it will
-        #       crash if it doesn't
-        with open(filename, 'w', encoding='utf-8') as f:
-            for term, occurrences in sorted(self.terms.items()):
-                f.write(f"{term}:{len(occurrences)}\n")
-                for docID, positions in sorted(occurrences.items()):
-                    f.write(f"\t{docID}: ")
-                    for i, position in enumerate(positions):
-                        f.write(f"{position}")
-                        if i != len(positions) - 1:
-                            f.write(",")
-                    f.write("\n")
-                # https://piazza.com/class/l7ze53oc13q32o/post/80_f1 
-                # confirms that a blank line between separate terms 
-                # is valid formatting for the index file
-                f.write("\n")
+        
 
     def tf(self, term, docID):
         ''' Count the number of times a term occured in a document. '''
