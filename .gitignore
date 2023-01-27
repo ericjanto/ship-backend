@@ -6,5 +6,6 @@
 *.txt
 *.pdf
 *.delta
+*.sqlite3
 
 !englishStopWords.txt

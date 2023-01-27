@@ -1,4 +1,5 @@
 from math import log10
+import pickle
 
 class PositionalInvertedIndex():
 
@@ -75,8 +76,11 @@ class PositionalInvertedIndex():
             return 0
         return (1 + log10(self.tf(term, docID))) * log10(self.documentCount / self.df(term))
 
-    def writeToXMLFile(self, filename):
-        pass
+   
+    def writeToBinary(self, filename):
+        with open(filename, 'wb') as f:
+            pickle.dump(self, f)
+        
 
     def __eq__(self, other):
         if not isinstance(other, PositionalInvertedIndex):
