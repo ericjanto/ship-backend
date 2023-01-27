@@ -333,7 +333,7 @@ class BooleanSearchEngine():
                 result.append(doc)
         return sorted(result)
 
-    def proximitySearch(self, terms, proximityThreshold):
+    def proximitySearch(self, terms, proximityThreshold, ordered=False):
         # TODO: Error handling for when no ordered terms 
         #       are provided
         docs = self.findDocumentsTermOccursIn(terms[0])
@@ -366,7 +366,6 @@ class BooleanSearchEngine():
             term, pos = instances[i]
             termsWithinProximity = set()
             termsWithinProximity.add(term)
-            startPos = pos
             for j in range(i+1, len(instances)):
                 otherTerm, otherPos = instances[j]
                 if otherTerm in termsWithinProximity:
@@ -378,6 +377,35 @@ class BooleanSearchEngine():
                 termsWithinProximity.add(otherTerm)
                 if len(termsWithinProximity) == len(terms):
                     return True
+        return False
+
+    def orderedTermsWithinProximityInDocument(self, terms, docID, proximityThreshold):
+        instances = []
+        for term in terms:
+            for pos in self.index.terms[term][docID]:
+                instances.append(term,pos)
+        instances = sorted(instances, key=lambda x: x[1])
+
+        curr_term = 0
+        for i in range(len(instances)):
+            term, pos = instances[i]
+            if term == terms[curr_term]:
+                termsWithinProximity = set()
+                termsWithinProximity.add(term)
+                curr_term = 1
+                for j in range(i+1, len(instances)):
+                    otherTerm, otherPos = instances[j]
+                    if otherTerm == terms[curr_term]:
+                        if otherTerm in termsWithinProximity:
+                            continue
+                        if otherPos - pos > proximityThreshold:
+                            curr_term = 0
+                            break
+                        termsWithinProximity.add(otherTerm)
+                        curr_term += 1
+                        if len(termsWithinProximity) == len(terms):
+                            return True
+
         return False
 
     def negate(self, docs):
