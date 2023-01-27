@@ -37,6 +37,24 @@ class PositionalInvertedIndex():
                 return
         self.terms[term][docID].append(position)
 
+    def insertPostingList(self, term, docID, positions):
+        """ 
+        Should only use this when importing an existing
+        index, and never when adding new entries to an existing
+        index. This is because this will override the postings
+        list for term at docID.
+
+        positions must be a list
+        """
+        if docID not in self.documentIDs:
+            self.documentIDs.add(docID)
+            self.documentCount += 1
+
+        if term not in self.terms:
+            self.terms[term] = dict()
+
+        self.terms[term][docID] = positions
+
     def getTermDocumentFrequency(self, term):
         if term not in self.terms:
             return 0

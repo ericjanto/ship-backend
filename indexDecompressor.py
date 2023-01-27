@@ -9,6 +9,8 @@ class IndexDecompressor():
         """
         self.vBytes = vBytes
 
+        self.vBytesLength = len(self.vBytes)
+
         self.pos = 0
 
         self.index = None
@@ -33,14 +35,20 @@ class IndexDecompressor():
 
                 lastPosition = 0
 
-                for _ in range(numberOfOccurences):
+                positions = [0] * numberOfOccurences
+
+                for i in range(numberOfOccurences):
                     delta = self.readNextIntFromByteStream()
 
                     position = delta + lastPosition
 
-                    self.index.insertTermInstance(term, docID, position)
+                    positions[i] = position
+
+                    #self.index.insertTermInstance(term, docID, position)
 
                     lastPosition = position
+
+                self.index.insertPostingList(term, docID, positions)
 
         return self.index
 
@@ -49,18 +57,19 @@ class IndexDecompressor():
     def readNextIntFromByteStream(self):
         val = 0
 
-        keepGoing = True
-
-        while self.pos < len(self.vBytes):
+        while self.pos < self.vBytesLength:
 
             byteVal = self.vBytes[self.pos]
 
-            val += byteVal % 128
+            if byteVal >= 128:
+                val += byteVal - 128
+            else:
+                val += byteVal
 
             self.pos += 1
 
             if byteVal < 128:
-                val = val << 7
+                val = val * 128
             else:
                 return val
         # If the compressed index is not corrupted, 
