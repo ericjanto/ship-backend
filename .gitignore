@@ -7,5 +7,5 @@
 *.pdf
 *.delta
 *.sqlite3
-
+output.xml
 !englishStopWords.txt

@@ -9,7 +9,7 @@ class PositionalInvertedExporter():
 
 
     @staticmethod
-    def saveToTxtFile(self, index, filename):
+    def saveToTxtFile(index, filename):
         with open(filename, 'w', encoding='utf-8') as f:
             for term, occurrences in sorted(index.terms.items()):
                 f.write(f"{term}:{len(occurrences)}\n")
@@ -27,7 +27,13 @@ class PositionalInvertedExporter():
 
 
     @staticmethod
-    def saveToCompressedIndex(self, index, filename):
+    def saveToCompressedIndex(index, filename):
         compressedIndex = indexToVBytes(index)
         with open(filename, "wb") as f:
-            f.write(compressedIndex)
+            f.write(bytes(compressedIndex))
+
+if __name__=='__main__':
+    pii = PositionalInvertedIndex.readFromBinary("index.bin")
+    print(pii.documentIDs)
+    piexporter = PositionalInvertedExporter()
+    piexporter.saveToCompressedIndex(pii, "index-vbytes.bin")

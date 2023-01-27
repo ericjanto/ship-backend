@@ -1,13 +1,13 @@
 import sqlite3
 from bs4 import BeautifulSoup as bs
 from PositionalInvertedIndexFactory import PositionalInvertedIndexFactory
+from PositionalInvertedIndexExporter import PositionalInvertedExporter
 
 class DatabaseToIndex:
     def __init__(self, dbPathName, tableName):
-        print("HI")
         self.conn = sqlite3.connect(dbPathName)
         self.cursor = self.conn.cursor()
-        self.cursor.execute("SELECT (storyId || '-' || idx) AS docID, text FROM "+tableName)
+        self.cursor.execute("SELECT (storyId*10000+idx) AS docID, text FROM "+tableName)
         self.rows = self.cursor.fetchall()
         self.docIDs = [row[0] for row in self.rows]
         self.documents = [row[1] for row in self.rows]
@@ -31,10 +31,6 @@ class DatabaseToIndex:
     
     def closeConn(self):
         self.cursor.close()
-
-    """
-    function that continously writes to a binary file
-    """
 
     def indexChapters(self):
         pidxFactory = PositionalInvertedIndexFactory()
@@ -96,5 +92,10 @@ if __name__ == "__main__":
     conn.close()
     """
     dbIdx = DatabaseToIndex("smallerDB.sqlite3", "Chapters")
-    dbIdx.indexChapters().writeToBinary("index.bin")
+    pii = dbIdx.indexChapters()
+    print("indexing is done")
+    pii.writeToBinary('chapters-index.bin')
+    print("Saved pii to binary file")
+    PositionalInvertedExporter.saveToCompressedIndex(pii, "chapters-index-vbytes.bin")
+    print("Saved index as vbytes")
     dbIdx.closeConn()

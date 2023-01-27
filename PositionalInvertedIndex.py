@@ -1,5 +1,6 @@
 from math import log10
 import pickle
+from indexCompressor import *
 
 class PositionalInvertedIndex():
 
@@ -76,8 +77,8 @@ class PositionalInvertedIndex():
             return 0
         return (1 + log10(self.tf(term, docID))) * log10(self.documentCount / self.df(term))
 
-   
-    def writeToBinary(self, filename):
+    # Largely keeping this so that we don't have to re-index, in case there are any [future] bugs with index compression
+    def writeToBinary(self, filename): 
         with open(filename, 'wb') as f:
             pickle.dump(self, f)
         
@@ -89,3 +90,4 @@ class PositionalInvertedIndex():
         return (self.terms == other.terms 
                 and self.documentIDs == other.documentIDs 
                 and self.documentCount == other.documentCount)
+

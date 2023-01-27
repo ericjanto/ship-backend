@@ -4,6 +4,7 @@ from PositionalInvertedIndex import PositionalInvertedIndex
 
 from indexDecompressor import IndexDecompressor
 
+from PositionalInvertedIndexExporter import PositionalInvertedExporter
 
 class PositionalInvertedIndexLoader():
 
@@ -52,5 +53,5 @@ class PositionalInvertedIndexLoader():
 
 
 if __name__ == "__main__":
-    readInIndex = PositionalInvertedIndexLoader.loadFromFile("indexes/index.trec.sample.txt")
-    readInIndex.writeToTxtFile("indexes/index.loaderTest.trec.sample.txt")
+    readInIndex = PositionalInvertedIndexLoader.loadFromCompressedFile("chapters-index-vbytes.bin")
+    PositionalInvertedExporter.saveToTxtFile(readInIndex, "chapters-index.txt")
