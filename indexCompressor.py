@@ -20,7 +20,7 @@ def vByteArrayToInts(vBytes):
             ints[-1] = ints[-1] << 7
     return ints[:-1]
 
-def termToBytes(term):
+def strToBytes(term):
     return bytearray(term, encoding="utf-8")
 
 
@@ -32,7 +32,7 @@ def indexToVBytes(pii):
 
     for term in pii.terms:
         # Convert the term into regular bytes
-        bTerm = termToBytes(term)
+        bTerm = strToBytes(term)
         # Get the length of the byte representation
         bTermLen = len(bTerm)
         # Convert that length into a vByte
@@ -68,6 +68,50 @@ def indexToVBytes(pii):
                 vBytes += intToVByte(deltaPosition)
 
                 lastPosition = position
+
+    return vBytes
+
+# TODO: Refactor this file as a whole
+
+
+def tagIndexToVBytes(tpii):
+
+    vBytes = []
+
+    # Add the number of tags in the index
+    vBytes += intToVByte(len(tpii.tags))
+
+    for tag in tpii.tags:
+
+        # Convert the tag into regular bytes
+        bTag = strToBytes(tag)
+        # Get the length of the byte representation
+        bTagLen = len(bTag)
+        # Convert that length into a vByte
+
+        bTagLenVByte = intToVByte(bTagLen)
+
+        vBytes += bTagLenVByte
+        vBytes += bTag
+
+        # Write the posting list for the term to the
+        # vByte representation
+
+        storyIDs = tpii.tags[tag]
+
+        storyIDCount = len(storyIDs)
+
+        vBytes += intToVByte(storyIDCount)
+
+        lastStoryID = 0
+
+        for storyID in storyIDs:
+
+            deltaID = storyID - lastStoryID
+
+            vBytes += intToVByte(deltaID)
+
+            lastStoryID = storyID
 
     return vBytes
 

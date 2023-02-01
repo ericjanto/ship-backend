@@ -1,5 +1,7 @@
 from PositionalInvertedIndex import PositionalInvertedIndex
+from TagPositionalInvertedIndex import TagPositionalInvertedIndex
 
+# TODO: Refactor, possibly split into abstract and subclasses
 
 class IndexDecompressor():
 
@@ -52,6 +54,31 @@ class IndexDecompressor():
 
         return self.index
 
+
+    def toTagIndex(self):
+        self.index = TagPositionalInvertedIndex()
+
+        numTags = self.readNextIntFromByteStream()
+
+        for _ in range(numTags):
+            tagLength = self.readNextIntFromByteStream()
+
+            tag = self.readTermFromByteStream(tagLength)
+
+            storyIDCount = self.readNextIntFromByteStream()
+
+            lastStoryID = 0
+
+            for _ in range(storyIDCount):
+                delta = self.readNextIntFromByteStream()
+
+                storyID = delta + lastStoryID
+
+                self.index.insertTagInstance(tag, storyID)
+
+                lastStoryID = storyID
+
+        return self.index
 
 
     def readNextIntFromByteStream(self):
