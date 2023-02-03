@@ -58,7 +58,7 @@ class PositionalInvertedIndex():
     def getDistinctTermsCount(self):
         return len(self.terms.keys())
     
-    # NB: not super accurate, because some languages have words which consist from ascii characters only (e.g. "amore" in Spanish)
+    # NB: not super accurate, because some languages have words which consist of ascii characters only (e.g. "amore" in Italian)
     def getEnglishTermsCount(self):
         count = 0
         for term in self.terms.keys():
