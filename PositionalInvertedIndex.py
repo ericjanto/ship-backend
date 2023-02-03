@@ -55,6 +55,17 @@ class PositionalInvertedIndex():
 
         self.terms[term][docID] = positions
 
+    def getDistinctTermsCount(self):
+        return len(self.terms.keys())
+    
+    # NB: not super accurate, because some languages have words which consist from ascii characters only (e.g. "amore" in Spanish)
+    def getEnglishTermsCount(self):
+        count = 0
+        for term in self.terms.keys():
+            if len(term.encode('ascii', errors='ignore').decode('utf-8')) == len(term):
+                count += 1
+        return count
+
     def getTermDocumentFrequency(self, term):
         if term not in self.terms:
             return 0
