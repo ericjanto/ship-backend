@@ -24,6 +24,15 @@ def strToBytes(term):
     return bytearray(term, encoding="utf-8")
 
 
+def convertStrToLengthPlusVByteEncoding(s: str) -> list[int]:
+    bStr = strToBytes(s)
+    bStrLength = len(bStr)
+    bStrLengthVBytes = intToVByte(bStrLength)
+
+    finalRepresentation = bStrLengthVBytes + bStr
+
+    return finalRepresentation
+
 def indexToVBytes(pii):
     vBytes = []
 
@@ -31,17 +40,8 @@ def indexToVBytes(pii):
     vBytes += intToVByte(len(pii.terms))
 
     for term in pii.terms:
-        # Convert the term into regular bytes
-        bTerm = strToBytes(term)
-        # Get the length of the byte representation
-        bTermLen = len(bTerm)
-        # Convert that length into a vByte
-        bTermLenVByte = intToVByte(bTermLen)
-
-        # Write both the length of the term, and the term
-        # to the vByte encoding of the index
-        vBytes += bTermLenVByte
-        vBytes += bTerm
+        # Add the term to the byte representation
+        vBytes += convertStrToLengthPlusVByteEncoding(term)
 
         # Write the number of documents that this term occurs
         # in to the vByte encoding
@@ -83,16 +83,8 @@ def tagIndexToVBytes(tpii):
 
     for tag in tpii.tags:
 
-        # Convert the tag into regular bytes
-        bTag = strToBytes(tag)
-        # Get the length of the byte representation
-        bTagLen = len(bTag)
-        # Convert that length into a vByte
-
-        bTagLenVByte = intToVByte(bTagLen)
-
-        vBytes += bTagLenVByte
-        vBytes += bTag
+        # Add the tag into the byte representation
+        vBytes += convertStrToLengthPlusVByteEncoding(tag)
 
         # Write the posting list for the term to the
         # vByte representation
