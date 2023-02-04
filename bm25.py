@@ -1,5 +1,7 @@
 import numpy as np
-import multiprocessing as mp
+from multiprocessing import Manager
+from multiprocessing import Pool
+from multiprocessing import cpu_count
 
 from PositionalInvertedIndex import PositionalInvertedIndex
 from Preprocessor import Preprocessor
@@ -15,9 +17,9 @@ def get_Document_Lengths(docIDs,index):
 
 # Placeholder Method to get the average number of terms after preprocessing in a document.
 def get_Average_Document_Length(index):
-    no_of_processes = (mp.cpu_count()//4)
+    no_of_processes = (cpu_count()//4)
     doc_splits = partition_data(list(index.documentIDs),no_of_processes)
-    pool = mp.Pool(processes=no_of_processes)
+    pool = Pool(processes=no_of_processes)
     results = [pool.apply_async(get_Document_Lengths,(split,index,)) for split in doc_splits]
     results = [process.get() for process in results]
     total_len = sum(results)
@@ -148,11 +150,11 @@ class BM25_Model():
             if doc_list:
                 doc_IDs += list(doc_list.keys())
         doc_IDs = list(set(doc_IDs))
-        no_of_processes = (mp.cpu_count()//4)
+        no_of_processes = (cpu_count()//4)
 
         # Using multiprocessing to rank documents in parallel
         doc_partitions = partition_data(doc_IDs,no_of_processes)
-        pool = mp.Pool(processes=no_of_processes)
+        pool = Pool(processes=no_of_processes)
         results = [pool.apply_async(self.score_document,(query_terms,doc_IDs,)) for doc_IDs in doc_partitions]
         results = [score.get() for score in results]
         ranked_docs = sum(results,[])
