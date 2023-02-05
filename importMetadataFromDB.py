@@ -40,20 +40,22 @@ class MetadataImporter():
                 self.numStoriesMissingMetadata += 1
                 continue
 
+            #TODO: these min calls are hacky at best, see if better
+            # way to do things
             storyMetadata = StoryMetadataRecord()
-            storyMetadata.storyID = min(int(row[0]), 0)
+            storyMetadata.storyID = max(int(row[0]), 0)
             storyMetadata.title = row[1]
             storyMetadata.author = row[2]
             storyMetadata.setDescription(row[3])
-            storyMetadata.currentChapterCount = min(int(row[4]), 0)
+            storyMetadata.currentChapterCount = max(int(row[4]), 0)
             storyMetadata.setFinalChapterCount(int(row[5]))
             storyMetadata.finished = bool(row[6])
-            storyMetadata.language = min(int(row[7]), 0)
-            storyMetadata.wordCount = min(int(row[8]), 0)
-            storyMetadata.commentCount = min(int(row[9]), 0)
-            storyMetadata.bookmarkCount = min(int(row[10]), 0)
-            storyMetadata.kudosCount = min(int(row[11]), 0)
-            storyMetadata.hitCount = min(int(row[12]), 0)
+            storyMetadata.language = max(int(row[7]), 0)
+            storyMetadata.wordCount = max(int(row[8]), 0)
+            storyMetadata.commentCount = max(int(row[9]), 0)
+            storyMetadata.bookmarkCount = max(int(row[10]), 0)
+            storyMetadata.kudosCount = max(int(row[11]), 0)
+            storyMetadata.hitCount = max(int(row[12]), 0)
             storyMetadata.lastUpdated = row[13]
 
             self.metadataIndex[storyMetadata.storyID] = storyMetadata
@@ -77,7 +79,13 @@ if __name__ == "__main__":
     from indexCompressor import metadataIndexToVBytes
     from indexDecompressor import IndexDecompressor
 
+    print(len(metadata))
+
     compressedIndex = metadataIndexToVBytes(metadata)
+
+    print(len(compressedIndex))
+
+
     with open(PATH_TO_METADATA_INDEX, "wb") as f:
         f.write(bytearray(compressedIndex))
 
@@ -86,6 +94,8 @@ if __name__ == "__main__":
     decompressor = IndexDecompressor(compressedTagIndex)
 
     decompressedMetadata = decompressor.toMetadataIndex()
+
+    print(len(decompressedMetadata))
 
     print(metadata == decompressedMetadata)
 
