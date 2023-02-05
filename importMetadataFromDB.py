@@ -67,8 +67,9 @@ class MetadataImporter():
 
             if verbose and i % 100000 == 0:
                 print(f"Imported metadata records for {i/1000000} million stories")
+        if verbose:
+            print(f"{self.numStoriesMissingMetadata} stories were missing their metadata, and so were not added to the metadata index")
 
-        print(self.numStoriesMissingMetadata)
         return self.metadataIndex
 
     def processDate(self, date):
@@ -93,28 +94,11 @@ if __name__ == "__main__":
 
     metadata = importer.importMetadata(verbose=True, limit=1000000)
 
-    from indexCompressor import metadataIndexToVBytes
-    from indexDecompressor import IndexDecompressor
+    from StoryMetadataLoader import StoryMetadataLoader
+    from StoryMetadataExporter import StoryMetadataExporter
 
-    print(len(metadata))
-
-    compressedIndex = metadataIndexToVBytes(metadata)
-
-    print(len(compressedIndex))
-
-
-    with open(PATH_TO_METADATA_INDEX, "wb") as f:
-        f.write(bytearray(compressedIndex))
-
-    with open(PATH_TO_METADATA_INDEX, "rb") as f:
-        compressedTagIndex = f.read()
-    decompressor = IndexDecompressor(compressedTagIndex)
-
-    decompressedMetadata = decompressor.toMetadataIndex()
-
-    print(len(decompressedMetadata))
-
-    differencesIDs = []
+    StoryMetadataExporter.saveToCompressedIndex(metadata, PATH_TO_METADATA_INDEX)
+    decompressedMetadata = StoryMetadataLoader.loadFromCompressedFile(PATH_TO_METADATA_INDEX)
 
     if len(metadata) != len(decompressedMetadata):
         print("False")
@@ -124,5 +108,4 @@ if __name__ == "__main__":
         for key in metadata.keys():
             if metadata[key] != decompressedMetadata[key]:
                 differencesFound = True
-                differencesIDs.append(key)
         print(not differencesFound)
