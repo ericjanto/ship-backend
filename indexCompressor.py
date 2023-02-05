@@ -1,3 +1,6 @@
+from typing import List
+
+
 def intToVByte(x):
     if x == 0:
         return bytearray([128])
@@ -24,7 +27,7 @@ def strToBytes(term):
     return bytearray(term, encoding="utf-8")
 
 
-def convertStrToLengthPlusVByteEncoding(s: str) -> list[int]:
+def convertStrToLengthPlusVByteEncoding(s: str) -> List[int]:
     bStr = strToBytes(s)
     bStrLength = len(bStr)
     bStrLengthVBytes = intToVByte(bStrLength)
