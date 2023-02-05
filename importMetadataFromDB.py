@@ -41,19 +41,19 @@ class MetadataImporter():
                 continue
 
             storyMetadata = StoryMetadataRecord()
-            storyMetadata.storyID = int(row[0])
+            storyMetadata.storyID = min(int(row[0]), 0)
             storyMetadata.title = row[1]
             storyMetadata.author = row[2]
             storyMetadata.setDescription(row[3])
-            storyMetadata.currentChapterCount = int(row[4])
+            storyMetadata.currentChapterCount = min(int(row[4]), 0)
             storyMetadata.setFinalChapterCount(int(row[5]))
             storyMetadata.finished = bool(row[6])
-            storyMetadata.language = row[7]
-            storyMetadata.wordCount = int(row[8])
-            storyMetadata.commentCount = int(row[9])
-            storyMetadata.bookmarkCount = int(row[10])
-            storyMetadata.kudosCount = int(row[11])
-            storyMetadata.hitCount = int(row[12])
+            storyMetadata.language = min(int(row[7]), 0)
+            storyMetadata.wordCount = min(int(row[8]), 0)
+            storyMetadata.commentCount = min(int(row[9]), 0)
+            storyMetadata.bookmarkCount = min(int(row[10]), 0)
+            storyMetadata.kudosCount = min(int(row[11]), 0)
+            storyMetadata.hitCount = min(int(row[12]), 0)
             storyMetadata.lastUpdated = row[13]
 
             self.metadataIndex[storyMetadata.storyID] = storyMetadata
@@ -68,8 +68,24 @@ class MetadataImporter():
 
 if __name__ == "__main__":
     PATH_TO_DB = r"F:\SmallerDB.sqlite3"
+
+    PATH_TO_METADATA_INDEX = "data/compressedMetadata.bin"
     importer = MetadataImporter(PATH_TO_DB)
 
     metadata = importer.importMetadata(verbose=True, limit=1000000)
 
-    print(len(set(metadata.keys())) + importer.numStoriesMissingMetadata)
+    from indexCompressor import metadataIndexToVBytes
+    from indexDecompressor import IndexDecompressor
+
+    compressedIndex = metadataIndexToVBytes(metadata)
+    with open(PATH_TO_METADATA_INDEX, "wb") as f:
+        f.write(bytearray(compressedIndex))
+
+    with open(PATH_TO_METADATA_INDEX, "rb") as f:
+        compressedTagIndex = f.read()
+    decompressor = IndexDecompressor(compressedTagIndex)
+
+    decompressedMetadata = decompressor.toMetadataIndex()
+
+    print(metadata == decompressedMetadata)
+

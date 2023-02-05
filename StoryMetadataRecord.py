@@ -34,7 +34,7 @@ class StoryMetadataRecord():
         self.lastUpdated = None
 
     def setFinalChapterCount(self, finalChapterCount: int) -> None:
-        if finalChapterCount is None:
+        if finalChapterCount is None or finalChapterCount < 0:
             self.finalChapterCountKnown = False
             self.finalChapterCount = 0
         else:
@@ -56,3 +56,23 @@ class StoryMetadataRecord():
     def getDescription(self) -> str:
         # Decompresses and returns the description field for the Story
         return zlib.decompress(self._compressedDescription).decode(encoding="utf-8")
+
+    def __eq__(self, other):
+        if not isinstance(other, StoryMetadataRecord):
+            return False
+
+        return (self.storyID == other.storyID
+                and self.title == other.title
+                and self.author == other.author
+                and self._compressedDescription == other._compressedDescription
+                and self.currentChapterCount == other.currentChapterCount
+                and self.finalChapterCount == other.finalChapterCount
+                and self.finalChapterCountKnown == other.finalChapterCountKnown
+                and self.finished == other.finished
+                and self.language == other.language
+                and self.wordCount == other.wordCount
+                and self.commentCount == other.commentCount
+                and self.kudosCount == other.kudosCount
+                and self.bookmarkCount == other.bookmarkCount
+                and self.hitCount == other.hitCount
+                and self.lastUpdated == other.lastUpdated)
