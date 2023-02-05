@@ -103,6 +103,8 @@ class IndexDecompressor():
                 metadataRecord.finished = True
             if flagState >= 2:
                 metadataRecord.finalChapterCountKnown = True
+            else:
+                metadataRecord.finalChapterCount = 0
 
             metadataRecord.currentChapterCount = self.readNextIntFromByteStream()
 
@@ -117,7 +119,7 @@ class IndexDecompressor():
             metadataRecord.kudosCount = self.readNextIntFromByteStream()
             metadataRecord.hitCount = self.readNextIntFromByteStream()
 
-            metadataRecord.lastUpdated = self.readNextStrFromByteStream()
+            metadataRecord.lastUpdated = self.readNextIntFromByteStream()
 
             self.index[metadataRecord.storyID] = metadataRecord
 

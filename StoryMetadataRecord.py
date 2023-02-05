@@ -46,6 +46,9 @@ class StoryMetadataRecord():
         # Given the description field for a Story, compresses
         # the string and stores it within the record
 
+        if description is None:
+            description = ""
+
         # convert the description string to a bytes object
         bytesDescription = description.encode(encoding="utf-8")
 

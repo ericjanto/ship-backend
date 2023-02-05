@@ -3,7 +3,7 @@ import sqlite3
 from typing import Dict
 
 from StoryMetadataRecord import StoryMetadataRecord
-
+from datetime import datetime
 class MetadataImporter():
 
     def __init__(self, pathToDB):
@@ -23,7 +23,7 @@ class MetadataImporter():
                       StoryHeaders.language, StoryHeaders.words, 
                       StoryHeaders.comments, StoryHeaders.bookmarks, 
                       StoryHeaders.kudos, StoryHeaders.hits, 
-                      STRFTIME('%Y/%m/%d', StoryHeaders.date)
+                      StoryHeaders.date
                 FROM StoryHeaders 
                 LEFT JOIN AuthorLinks ON StoryHeaders.id = AuthorLinks.storyId
                 LEFT JOIN Authors ON AuthorLinks.authorId = Authors.id;
@@ -56,7 +56,12 @@ class MetadataImporter():
             storyMetadata.bookmarkCount = max(int(row[10]), 0)
             storyMetadata.kudosCount = max(int(row[11]), 0)
             storyMetadata.hitCount = max(int(row[12]), 0)
-            storyMetadata.lastUpdated = row[13]
+            storyMetadata.lastUpdated = self.processDate(row[13])
+
+            if storyMetadata.title is None:
+                storyMetadata.title = ""
+            if storyMetadata.author is None:
+                storyMetadata.author = ""
 
             self.metadataIndex[storyMetadata.storyID] = storyMetadata
 
@@ -66,7 +71,19 @@ class MetadataImporter():
         print(self.numStoriesMissingMetadata)
         return self.metadataIndex
 
+    def processDate(self, date):
+        try:
+            dt =  datetime.strptime(date, "%Y-%m-%d")
+        except ValueError:
+            dt = datetime.strptime(date, "%d %b %Y")
+        except Exception:
+            print("Something has gone with with the following date")
+            print(date)
 
+        if dt <= datetime(1970, 1, 1):
+            return 0
+        else:
+            return int(dt.timestamp())
 
 if __name__ == "__main__":
     PATH_TO_DB = r"F:\SmallerDB.sqlite3"
@@ -97,5 +114,15 @@ if __name__ == "__main__":
 
     print(len(decompressedMetadata))
 
-    print(metadata == decompressedMetadata)
+    differencesIDs = []
 
+    if len(metadata) != len(decompressedMetadata):
+        print("False")
+    else:
+        differencesFound = False
+
+        for key in metadata.keys():
+            if metadata[key] != decompressedMetadata[key]:
+                differencesFound = True
+                differencesIDs.append(key)
+        print(not differencesFound)

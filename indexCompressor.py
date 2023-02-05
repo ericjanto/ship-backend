@@ -26,6 +26,7 @@ def vByteArrayToInts(vBytes):
 
 def strToBytes(term):
     if term is None:
+        print("THIS IS HAPPENING")
         term = ""
     return bytearray(term, encoding="utf-8")
 
@@ -157,7 +158,7 @@ def StoryMetadataRecordToVBytes(metadataRecord: StoryMetadataRecord) -> List[int
     vBytes += intToVByte(metadataRecord.kudosCount)
     vBytes += intToVByte(metadataRecord.hitCount)
 
-    vBytes += convertStrToLengthPlusVByteEncoding(metadataRecord.lastUpdated)
+    vBytes += intToVByte(metadataRecord.lastUpdated)
 
     return vBytes
 
