@@ -10,3 +10,4 @@
 *.cProfile
 output.xml
 !englishStopWords.txt
+!data/compressed*

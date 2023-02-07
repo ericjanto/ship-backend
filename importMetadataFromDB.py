@@ -92,7 +92,7 @@ if __name__ == "__main__":
     PATH_TO_METADATA_INDEX = "data/compressedMetadata.bin"
     importer = MetadataImporter(PATH_TO_DB)
 
-    metadata = importer.importMetadata(verbose=True, limit=1000000)
+    metadata = importer.importMetadata(verbose=True, limit=100000)
 
     from StoryMetadataLoader import StoryMetadataLoader
     from StoryMetadataExporter import StoryMetadataExporter
