@@ -1,3 +1,7 @@
+from typing import List, Dict
+
+from StoryMetadataRecord import StoryMetadataRecord
+
 def intToVByte(x):
     if x == 0:
         return bytearray([128])
@@ -5,7 +9,7 @@ def intToVByte(x):
     while x > 0:
         vBytes.append(x % 128)
         x = x >> 7
-    vBytes[0] += 128 
+    vBytes[0] += 128
 
     return bytearray(vBytes[::-1])
 
@@ -21,8 +25,20 @@ def vByteArrayToInts(vBytes):
     return ints[:-1]
 
 def strToBytes(term):
+    if term is None:
+        print("THIS IS HAPPENING")
+        term = ""
     return bytearray(term, encoding="utf-8")
 
+
+def convertStrToLengthPlusVByteEncoding(s: str) -> List[int]:
+    bStr = strToBytes(s)
+    bStrLength = len(bStr)
+    bStrLengthVBytes = intToVByte(bStrLength)
+
+    finalRepresentation = bStrLengthVBytes + bStr
+
+    return finalRepresentation
 
 def indexToVBytes(pii):
     vBytes = []
@@ -31,17 +47,8 @@ def indexToVBytes(pii):
     vBytes += intToVByte(len(pii.terms))
 
     for term in pii.terms:
-        # Convert the term into regular bytes
-        bTerm = strToBytes(term)
-        # Get the length of the byte representation
-        bTermLen = len(bTerm)
-        # Convert that length into a vByte
-        bTermLenVByte = intToVByte(bTermLen)
-
-        # Write both the length of the term, and the term
-        # to the vByte encoding of the index
-        vBytes += bTermLenVByte
-        vBytes += bTerm
+        # Add the term to the byte representation
+        vBytes += convertStrToLengthPlusVByteEncoding(term)
 
         # Write the number of documents that this term occurs
         # in to the vByte encoding
@@ -83,16 +90,8 @@ def tagIndexToVBytes(tpii):
 
     for tag in tpii.tags:
 
-        # Convert the tag into regular bytes
-        bTag = strToBytes(tag)
-        # Get the length of the byte representation
-        bTagLen = len(bTag)
-        # Convert that length into a vByte
-
-        bTagLenVByte = intToVByte(bTagLen)
-
-        vBytes += bTagLenVByte
-        vBytes += bTag
+        # Add the tag into the byte representation
+        vBytes += convertStrToLengthPlusVByteEncoding(tag)
 
         # Write the posting list for the term to the
         # vByte representation
@@ -115,6 +114,53 @@ def tagIndexToVBytes(tpii):
 
     return vBytes
 
+def metadataIndexToVBytes(metadataIndex: Dict[int, StoryMetadataRecord]) -> List[int]:
+    vBytes = []
+
+    vBytes += intToVByte(len(metadataIndex))
+
+    for story in metadataIndex:
+        vBytes += StoryMetadataRecordToVBytes(metadataIndex[story])
+
+    return vBytes
+
+def StoryMetadataRecordToVBytes(metadataRecord: StoryMetadataRecord) -> List[int]:
+    vBytes = []
+
+    vBytes += intToVByte(metadataRecord.storyID)
+
+    vBytes += convertStrToLengthPlusVByteEncoding(metadataRecord.title)
+
+    vBytes += convertStrToLengthPlusVByteEncoding(metadataRecord.author)
+
+    # Write the compressed description, which is already in bytes
+    vBytes += intToVByte(len(metadataRecord._compressedDescription))
+    vBytes += bytearray(metadataRecord._compressedDescription)
+
+    # To save a single byte, will write the two boolean flagged fields together
+    flagState = 0
+    if metadataRecord.finished:
+        flagState += 1
+    if metadataRecord.finalChapterCountKnown:
+        flagState += 2
+    vBytes += intToVByte(flagState)
+
+    vBytes += intToVByte(metadataRecord.currentChapterCount)
+
+    if metadataRecord.finalChapterCountKnown:
+        vBytes += intToVByte(metadataRecord.finalChapterCount)
+
+    vBytes += intToVByte(metadataRecord.language)
+
+    vBytes += intToVByte(metadataRecord.wordCount)
+    vBytes += intToVByte(metadataRecord.commentCount)
+    vBytes += intToVByte(metadataRecord.bookmarkCount)
+    vBytes += intToVByte(metadataRecord.kudosCount)
+    vBytes += intToVByte(metadataRecord.hitCount)
+
+    vBytes += intToVByte(metadataRecord.lastUpdated)
+
+    return vBytes
 
 if __name__ == "__main__":
     print(intToVByte(150))
