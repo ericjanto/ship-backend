@@ -4,10 +4,10 @@ from PositionalInvertedIndexFactory import PositionalInvertedIndexFactory
 from PositionalInvertedIndexExporter import PositionalInvertedExporter
 
 class DatabaseToIndex:
-    def __init__(self, dbPathName, tableName):
+    def __init__(self, dbPathName, query):
         self.conn = sqlite3.connect(dbPathName)
         self.cursor = self.conn.cursor()
-        self.cursor.execute("SELECT (storyId*10000+idx) AS docID, text FROM "+tableName)
+        self.cursor.execute(query)
         self.rows = self.cursor.fetchall()
         self.docIDs = [row[0] for row in self.rows]
         self.documents = [row[1] for row in self.rows]
@@ -91,7 +91,17 @@ if __name__ == "__main__":
     # Close the database connection
     conn.close()
     """
-    dbIdx = DatabaseToIndex("smallerDB.sqlite3", "Chapters")
+    QUERY = """SELECT (chp.storyID*1000+chp.idx) AS docID,
+                CASE   
+                    WHEN chp.idx = 0 THEN chp.text || "." || sh.description || "." || sh.title
+                    ELSE chp.text
+                END AS text
+                FROM Chapters chp
+                JOIN StoryHeaders sh ON chp.storyId = sh.id
+                JOIN AuthorLinks al ON sh.id = al.storyId
+                JOIN Authors auth ON al.authorId = auth.id
+    """
+    dbIdx = DatabaseToIndex("smallerDB.sqlite3", QUERY)
     pii = dbIdx.indexChapters()
     print("indexing is done")
     pii.writeToBinary('chapters-index.bin')
