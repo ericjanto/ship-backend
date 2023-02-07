@@ -124,9 +124,11 @@ class BooleanSearchEngine():
                 exactTerms = []
                 continue
             if withinExactSearchMode:
-                if not self.isSymbolTerm(symbol):
+                if self.isWildCard(symbol):
+                    exactTerms.append(symbol)
+                elif not self.isSymbolTerm(symbol):
                     raise RuntimeError("Malformed query, non term symbols should not occur within an exact search ")
-                if symbol:                    
+                elif symbol:                    
                     exactTerms.append(symbol)
             else:
                 newQuery.append(symbol)
@@ -273,10 +275,13 @@ class BooleanSearchEngine():
 
         return query[0]
 
+    def isWildCard(self, symbol):
+        return symbol == "*"
+
     def isSymbolTerm(self, symbol):
         if self.isSymbolPostingList(symbol):
             return False
-        if symbol in ["AND", "OR", "NOT", "(", ")", "\"", ")#"]:
+        if symbol in ["AND", "OR", "NOT", "(", ")", "\"", ")#", "*"]:
             return False
         if self.isProximitySearchMarker(symbol):
             return False
@@ -310,25 +315,80 @@ class BooleanSearchEngine():
     def getProximityThresholdFromMarker(self, symbol):
         return int(symbol[1:len(symbol)-1])
 
+    def removeSubsequentStars(self, orderedTerms):
+        previousStar = False
+        cleanedTerms = []
+        for term in orderedTerms:
+            if term == "*" and previousStar:
+                continue
+            elif term == "*" and not previousStar:
+                cleanedTerms.append(term)
+                previousStar = True
+            else:
+                previousStar = False
+                cleanedTerms.append(term)
+        
+        return cleanedTerms
+
+
+    # In exact search which supports wild card inter queries, we can have 3 cases:
+    # 1) * is at the very beginning of a phrase - done
+    # 2) * is between 2 words - done
+    # 3) * is at the very end of a phrase - not done, is it worth it to handle this small edge case (?)
     def exactSearch(self, orderedTerms):
         # TODO: Error handling for when no ordered terms 
         #       are provided
-        docs = self.findDocumentsTermOccursIn(orderedTerms[0])
-        for i in range(1, len(orderedTerms)):
-            docs = self.intersection(docs, self.findDocumentsTermOccursIn(orderedTerms[i]))
+        orderedTerms = self.removeSubsequentStars(orderedTerms)
+        docs = []
+
+        # if query consists only from *, this query is meaningless:
+        if len(orderedTerms) == 1 and orderedTerms[0] == "*":
+            return docs
+
+        startIndex = 0 if orderedTerms[0] != "*" else 1 # index of first non-star term
+            
+        docs = self.findDocumentsTermOccursIn(orderedTerms[startIndex])
+
+        # find docs for remaining words:
+        for i in range(startIndex + 1, len(orderedTerms)):
+            if orderedTerms[i] == "*":
+                continue 
+            docs = self.intersection(docs, self.findDocumentsTermOccursIn(orderedTerms[i])) # docs contain all common docs
 
         if len(orderedTerms) == 1 or len(docs) == 0:
             return docs
 
         # TODO: Abstract away access to self.index.terms
-        startPositions = [(docID, pos) for docID in docs for pos in self.index.terms[orderedTerms[0]][docID]]
+        # handles 1) case where * is at the very beginning of a phrase
+        if startIndex == 1:
+            previousTermPositions = [(docID, pos) for docID in docs for pos in self.index.terms[orderedTerms[startIndex]][docID] if pos != 0]
+        else:
+            previousTermPositions = [(docID, pos) for docID in docs for pos in self.index.terms[orderedTerms[startIndex]][docID]]
 
-        for i, term in enumerate(orderedTerms[1:]):
-            i += 1
+        # handles 2) case where * is between 2 words
+        previousStar = False
+        for i, term in enumerate(orderedTerms[(startIndex+1):]):
             #TODO: See above todo about abstraction
-            startPositions = [(docID, pos) for (docID, pos) in startPositions if pos + i in self.index.terms[term][docID]]
+            if term != "*" and previousStar: # for terms which come after *
+                newPositions = []
+                for (docID, pos) in previousTermPositions: 
+                    for pos2 in range(pos + 2, pos + 21): # O(1); upper limit - 20 terms (a sentence) in between 
+                        if pos2 in self.index.terms[term][docID]:
+                            newPositions.append((docID, pos2))
+                previousTermPositions = newPositions
+                previousStar = False 
+            elif term != "*" and not previousStar: # for terms which come after another term
+                newPositions = []
+                for (docID, pos) in previousTermPositions:
+                    if (pos + 1) in self.index.terms[term][docID]:
+                        newPositions.append((docID, pos + 1))
+                previousTermPositions = newPositions
+                previousStar = False
+            else: # for * terms
+                previousStar = True
+
         result = []
-        for doc, _ in startPositions:
+        for doc, _ in previousTermPositions:
             if doc not in result:
                 result.append(doc)
         return sorted(result)
