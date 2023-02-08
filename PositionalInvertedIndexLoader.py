@@ -53,5 +53,5 @@ class PositionalInvertedIndexLoader():
 
 
 if __name__ == "__main__":
-    readInIndex = PositionalInvertedIndexLoader.loadFromCompressedFile("chapters-index-vbytes.bin")
-    PositionalInvertedExporter.saveToTxtFile(readInIndex, "chapters-index.txt")
+    readInIndex = PositionalInvertedIndexLoader.loadFromCompressedFile("./data/chapters-index-vbytes.bin")
+    PositionalInvertedExporter.saveToTxtFile(readInIndex, "./data/chapters-index.txt")

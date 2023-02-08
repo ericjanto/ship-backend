@@ -2,6 +2,8 @@ import sqlite3
 from bs4 import BeautifulSoup as bs
 from PositionalInvertedIndexFactory import PositionalInvertedIndexFactory
 from PositionalInvertedIndexExporter import PositionalInvertedExporter
+from preprocessing import loadStopWordsIntoSet
+from TermCounts import TermCounts
 
 class DatabaseToIndex:
     def __init__(self, dbPathName, query):
@@ -11,8 +13,12 @@ class DatabaseToIndex:
         self.rows = self.cursor.fetchall()
         self.docIDs = [row[0] for row in self.rows]
         self.documents = [row[1] for row in self.rows]
+        self.stopWords = loadStopWordsIntoSet('englishStopWords.txt')
 
     def conbvertChaptersToXML(self):
+        """
+        Converts the chapters in the database to XML
+        """
         root = BeautifulSoup("<root></root>", "xml")
         # Iterate over the rows and create child elements for each row
         for row in self.rows:
@@ -32,10 +38,33 @@ class DatabaseToIndex:
     def closeConn(self):
         self.cursor.close()
 
-    def indexChapters(self):
+    def __indexChapters(self):
+        """
+        Indexes the chapters in the database
+        """
         pidxFactory = PositionalInvertedIndexFactory()
-        docTerms = PositionalInvertedIndexFactory.preprocessDocs(self.documents)
+        docTerms = PositionalInvertedIndexFactory.preprocessDocs(self.documents, stem=True, stopwords=self.stopWords)
         return pidxFactory.generateIndexFromPreprocessedDocs(docTerms, self.docIDs)
+
+    def __storeAllUniqueTerms(self):
+        tc = TermCounts(self.docIDs, self.documents, self.stopWords)
+        tc.saveToBin('./data/term-counts.bin')
+
+    
+    def storeUniqueTermsAndIndex(self):
+        """
+        Stores the unique terms in the database and indexes the chapters
+        """
+        self.__storeAllUniqueTerms()
+        print("Unique terms stored")
+        pii =  self.__indexChapters()
+        print("Indexing completed")
+        pii.writeToBinary('./data/chapters-index.bin')
+        print("Saved pii to binary file")
+        PositionalInvertedExporter.saveToCompressedIndex(pii, "./data/chapters-index-vbytes.bin")
+        print("Saved index as vbytes")
+        
+            
         
         
 if __name__ == "__main__":
@@ -91,21 +120,37 @@ if __name__ == "__main__":
     # Close the database connection
     conn.close()
     """
-    QUERY = """SELECT (chp.storyID*1000+chp.idx) AS docID,
+    
+    CREATE_TABLE_QUERY = """
+                CREATE TABLE ChaptersWithStoryInfo AS
+                SELECT (chp.storyID*1000+chp.idx) AS docID,
                 CASE   
-                    WHEN chp.idx = 0 THEN chp.text || "." || sh.description || "." || sh.title
+                    WHEN chp.idx = 0 THEN chp.text || "." || sh.description || "." || sh.title || "." || group_concat(auth.name,',')
                     ELSE chp.text
                 END AS text
-                FROM Chapters chp
-                JOIN StoryHeaders sh ON chp.storyId = sh.id
+                FROM StoryHeaders sh
+                JOIN Chapters chp ON chp.storyId = sh.id
                 JOIN AuthorLinks al ON sh.id = al.storyId
                 JOIN Authors auth ON al.authorId = auth.id
+                GROUP BY docId;
     """
+
+    CREATE_TABLE_QUERY_2 = """
+    CREATE TABLE ChaptersWithStoryInfo AS
+    SELECT (chp.storyID*1000+chp.idx) AS docID,
+        CASE   
+            WHEN chp.idx = 0 THEN COALESCE(chp.text, '') || "." || COALESCE(sh.description, '') || "." || COALESCE(sh.title, '') || "." || COALESCE(group_concat(auth.name, ', '), '')
+            ELSE chp.text
+        END AS text
+    FROM Chapters chp
+    LEFT JOIN StoryHeaders sh ON chp.storyId = sh.id
+    LEFT JOIN AuthorLinks al ON sh.id = al.storyId
+    LEFT JOIN Authors auth ON al.authorId = auth.id
+    GROUP BY docID;
+    """
+    QUERY = "SELECT docID, text FROM ChaptersWithStoryInfo;"
+    ### Create a table for the query above
+    
     dbIdx = DatabaseToIndex("smallerDB.sqlite3", QUERY)
-    pii = dbIdx.indexChapters()
-    print("indexing is done")
-    pii.writeToBinary('chapters-index.bin')
-    print("Saved pii to binary file")
-    PositionalInvertedExporter.saveToCompressedIndex(pii, "chapters-index-vbytes.bin")
-    print("Saved index as vbytes")
+    dbIdx.storeUniqueTermsAndIndex()
     dbIdx.closeConn()
