@@ -1,30 +1,8 @@
 import numpy as np
-from multiprocessing import Manager
-from multiprocessing import Pool
-from multiprocessing import cpu_count
-
-from PositionalInvertedIndex import PositionalInvertedIndex
+import pickle
+from indexDecompressor import IndexDecompressor
+from preprocessing import loadStopWordsIntoSet
 from Preprocessor import Preprocessor
-
-# Placeholder Method to get the number of terms after preprocessing in a document.
-def get_Document_Lengths(docIDs,index):
-    doc_len = 0
-    for docID in docIDs:
-        for term in index.terms.keys():
-            appearances = index.terms[term].get(docID,[])
-            doc_len += len(appearances)
-    return doc_len
-
-# Placeholder Method to get the average number of terms after preprocessing in a document.
-def get_Average_Document_Length(index):
-    no_of_processes = (cpu_count()//4)
-    doc_splits = partition_data(list(index.documentIDs),no_of_processes)
-    pool = Pool(processes=no_of_processes)
-    results = [pool.apply_async(get_Document_Lengths,(split,index,)) for split in doc_splits]
-    results = [process.get() for process in results]
-    total_len = sum(results)
-    pool.terminate()
-    return total_len / index.documentCount
 
 def partition_data(data_idxs,no_of_partitions):
     """Helper function to partition data into chunks for preprocessing.
@@ -55,7 +33,7 @@ class BM25_Model():
     """Class follows Okapi BM25 model for information retrieval which scores the documents
     following a probabilistic model.  
     """
-    def __init__(self,positionalInvertedIndex,stopwords):
+    def __init__(self,positionalInvertedIndex,stopwords,term_counts):
         """
         Parameters
         ----------
@@ -68,7 +46,9 @@ class BM25_Model():
         """
         self.index = positionalInvertedIndex
         self.stopwords = stopwords
-        self.average_Doc_Len = get_Average_Document_Length(positionalInvertedIndex)
+        self.term_counts = term_counts
+        total_term_counts = sum([term_counts[docID]['tok_bfr_stemming'] for docID in term_counts])
+        self.avg_doc_len = total_term_counts/len(term_counts.keys())
 
     def preprocess_query(self,query,removeStopWords=True,stem=True):
         """Processes a set of terms by performing case folding, stopword removal and
@@ -98,7 +78,7 @@ class BM25_Model():
             return ""
         return preprocessor.terms
 
-    def score_document(self,query,doc_nos):
+    def score_documents(self,query,doc_nos):
         """Calculates the BM25 score of a batch of documents given a query.
         Parameters
         ----------
@@ -122,8 +102,8 @@ class BM25_Model():
             for term in query:
                 tf = self.index.tf(term,doc_no)
                 df = self.index.df(term)
-                L_d = get_Document_Lengths([doc_no],self.index)
-                avg_L = self.average_Doc_Len
+                L_d = self.term_counts[doc_no]['tok_bfr_stemming']
+                avg_L = self.avg_doc_len
                 N = self.index.documentCount
                 term_1 = tf/(k*(L_d/avg_L) + tf + 0.5)
                 term_2 = np.log10((N-df+0.5)/(df+0.5))
@@ -150,13 +130,25 @@ class BM25_Model():
             if doc_list:
                 doc_IDs += list(doc_list.keys())
         doc_IDs = list(set(doc_IDs))
-        no_of_processes = (cpu_count()//4)
 
-        # Using multiprocessing to rank documents in parallel
-        doc_partitions = partition_data(doc_IDs,no_of_processes)
-        pool = Pool(processes=no_of_processes)
-        results = [pool.apply_async(self.score_document,(query_terms,doc_IDs,)) for doc_IDs in doc_partitions]
-        results = [score.get() for score in results]
-        ranked_docs = sum(results,[])
-        pool.terminate()
-        return ranked_docs
+        ranked_docs = self.score_documents(query_terms,doc_IDs)
+        return sorted(ranked_docs,key=lambda x: x[1],reverse=True)
+
+# Example Usage of Bm25 
+if __name__ == "__main__":
+    with open('data/chapters-index-vbytes.bin','rb') as f:
+        data = f.read()
+        decompressor = IndexDecompressor(data)
+        index = decompressor.toIndex()
+    
+    with open('data/term-counts.bin','rb') as f:
+        data = f.read()
+        term_counts = pickle.loads(data)
+    
+    stopwords = loadStopWordsIntoSet('englishStopWords.txt')
+
+    model = BM25_Model(index,stopwords,term_counts)
+    results = model.ranked_search('Knives by Kylielee1000')[:5]
+    
+    for docId,score in results:
+        print(f"Document Number: {docId}\nScore: {score}")
