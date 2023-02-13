@@ -1,5 +1,5 @@
 import numpy as np
-import json
+from itertools import product
 
 class trieNode:
     def __init__(self):
@@ -49,6 +49,25 @@ class trieNode:
         answer = set()    
         self.dfs_traversal(rotated_query_term[:-1], answer)
         return answer
+
+    def expand_wildcard_terms(self,query):
+        expandedQueries = []
+        position2term = {}
+        terms = query
+        for i in range(len(terms)):
+            if '*' in terms[i] and len(terms[i]) > 1:
+                terms[i] = clean_wildcard_term(terms[i])
+                terms[i] = rotate_query_term(terms[i])
+                expandedTerm = self.search(query[i])
+                if expandedTerm == "NOT FOUND":
+                    position2term[i] = [query[i]] #this term surely won't be in the index because it contains $ and * characters
+                else:
+                    position2term[i] = list(expandedTerm)
+            else:
+                position2term[i] = [query[i]]
+        allPermutations = [dict(zip(position2term, v)) for v in product(*position2term.values())]
+        expandedQueries = [list(d.values()) for d in allPermutations]
+        return expandedQueries
 
 
 
@@ -119,4 +138,6 @@ def clean_wildcard_term(query_term):
     return query_term
     
 
+
+    
 
