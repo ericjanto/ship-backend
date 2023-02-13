@@ -1,10 +1,9 @@
 import os
-
+import pandas as pd
 from PositionalInvertedIndex import PositionalInvertedIndex
-
 from indexDecompressor import IndexDecompressor
-
 from PositionalInvertedIndexExporter import PositionalInvertedExporter
+import WildcardSearch
 
 class PositionalInvertedIndexLoader():
 
@@ -55,3 +54,7 @@ class PositionalInvertedIndexLoader():
 if __name__ == "__main__":
     readInIndex = PositionalInvertedIndexLoader.loadFromCompressedFile("./data/chapters-index-vbytes.bin")
     PositionalInvertedExporter.saveToTxtFile(readInIndex, "./data/chapters-index.txt")
+
+    terms = pd.read_pickle("./data/doc-terms.pickle")
+    permutermIndexTrie = WildcardSearch.create_permuterm_index_trie(terms)
+    

@@ -1,6 +1,7 @@
 import re
-
 from Preprocessor import Preprocessor
+from itertools import product
+import WildcardSearch
 
 class BooleanSearchEngine():
 
@@ -17,8 +18,9 @@ class BooleanSearchEngine():
     expr  => term
     '''
 
-    def __init__(self, positionalInvertedIndex, stopwords, debugVerbose=False):
+    def __init__(self, positionalInvertedIndex, permutermIndexTrie, stopwords, debugVerbose=False):
         self.index = positionalInvertedIndex
+        self.permutermIndexTrie = permutermIndexTrie
         self.stopwords = stopwords
 
     def makeQuery(self, query, debugVerbose=False):
@@ -55,7 +57,7 @@ class BooleanSearchEngine():
 
             elif symbol == ")" and withinProximitySearchMode:
                 newQuery.append(symbol + "#")
-                withinProximitySearchMode = False
+                # withinProximitySearchMode = False
             else:
                 newQuery.append(symbol)
             i += 1
@@ -66,7 +68,7 @@ class BooleanSearchEngine():
             print(query)
             print()
 
-        # Step one: Recursively process any (expr) instances
+        # Step 1: Recursively process any (expr) instances
         bracketStartPos = -1
         bracketEndPos = -1
         bracketDepth = 0
@@ -97,183 +99,227 @@ class BooleanSearchEngine():
             print(query)
             print()
 
-        # Step 2: Normalise terms
-
+        
+        # Step 2: Expand terms with *
+        expandedQueries = []
+        position2term = {}
+        # separate search terms for proximity search
+        separated = False
+        if withinProximitySearchMode and len(query) == 3:
+            splitPart = query[1].split(",")
+            query = [query[0]] + splitPart + [query[-1]]
+            separated = True
         for i in range(len(query)):
-            if self.isSymbolTerm(query[i]):
-                #TODO: Add in parameters somewhere to control whether or not 
-                #      stopword removal or stemming occurs
-                query[i] = self.preprocessQueryTerm(query[i])
+            if not self.isSymbolTerm(query[i]):
+                position2term[i] = [query[i]]
+
+            elif "*" in query[i] and len(query[i]) > 1:
+                query[i] = WildcardSearch.clean_wildcard_term(query[i])
+                query[i] = WildcardSearch.rotate_query_term(query[i])
+                expandedTerm = self.permutermIndexTrie.search(query[i])
+                if expandedTerm == "NOT FOUND":
+                    position2term[i] = [query[i]] #this term surely won't be in the index because it contains $ and * characters
+                else:
+                    position2term[i] = list(expandedTerm)
+
+            else:
+                position2term[i] = [query[i]]
+
+        allPermutations = [dict(zip(position2term, v)) for v in product(*position2term.values())]
+        expandedQueries = [list(d.values()) for d in allPermutations]
+        if withinProximitySearchMode and separated:
+            expandedQueries = [[q[0]] + [",".join(q[1:-1])] + [q[-1]] for q in expandedQueries]
+            separated = False 
+            withinProximitySearchMode = False
+
 
         if debugVerbose:
             print("Post stage 2:")
-            print(query)
+            print(expandedQueries)
             print()
 
-        # Step 3: Handle exact search
+        answer = set()
+        for query in expandedQueries:
+        
+            # Step 3: Normalise terms
 
-        newQuery = []
-        exactTerms = []
-        withinExactSearchMode = False
-        for symbol in query:
-            if symbol == "\"":
-                withinExactSearchMode = not withinExactSearchMode
+            for i in range(len(query)):
+                if self.isSymbolTerm(query[i]):
+                    #TODO: Add in parameters somewhere to control whether or not 
+                    #      stopword removal or stemming occurs
+                    query[i] = self.preprocessQueryTerm(query[i])
 
-                if not withinExactSearchMode and len(exactTerms) > 0:
-                    newQuery.append(self.exactSearch(exactTerms))
-                exactTerms = []
-                continue
-            if withinExactSearchMode:
-                if self.isWildCard(symbol):
-                    exactTerms.append(symbol)
-                elif not self.isSymbolTerm(symbol):
-                    raise RuntimeError("Malformed query, non term symbols should not occur within an exact search ")
-                elif symbol:                    
-                    exactTerms.append(symbol)
-            else:
-                newQuery.append(symbol)
-        query = newQuery        
+            if debugVerbose:
+                print("Post stage 3:")
+                print(query)
+                print()
 
-        if debugVerbose:
-            print("Post stage 3:")
-            print(query)
-            print()
+            # Step 4: Handle exact search
 
-        # Step 4: Handle positional search
+            newQuery = []
+            exactTerms = []
+            withinExactSearchMode = False
+            for symbol in query:
+                if symbol == "\"":
+                    withinExactSearchMode = not withinExactSearchMode
 
-        newQuery = []
-        withinProximitySearchMode = False
-        proximityThreshold = -1
-        proximityTerms = []
-        i = 0
-        while i < len(query):
-            # TODO: Assumes that there only terms within proximity search brackets
-            symbol = query[i]
-            if self.isProximitySearchMarker(symbol):
-                withinProximitySearchMode = True
-                proximityThreshold = self.getProximityThresholdFromMarker(symbol)
-            elif symbol == ")#":
-                if not withinProximitySearchMode:
-                    raise RuntimeError("Malformed query, proximity search closed before it was opened")
-                withinProximitySearchMode = False
-                newQuery.append(self.proximitySearch(proximityTerms, proximityThreshold))
-                proximityTerms = []
-                proximityThreshold = -1
-            else:
-                if not withinProximitySearchMode:
-                    newQuery.append(symbol)
+                    if not withinExactSearchMode and len(exactTerms) > 0:
+                        newQuery.append(self.exactSearch(exactTerms))
+                    exactTerms = []
+                    continue
+                if withinExactSearchMode:
+                    if self.isWildCard(symbol):
+                        exactTerms.append(symbol)
+                    elif not self.isSymbolTerm(symbol):
+                        raise RuntimeError("Malformed query, non term symbols should not occur within an exact search ")
+                    elif symbol:                    
+                        exactTerms.append(symbol)
                 else:
-                    if not self.isSymbolTerm(symbol):
-                        raise RuntimeError("Malformed query, non term symbol found inside proximity search")
-                    proximityTerms.append(symbol)
-            i += 1
-        if withinProximitySearchMode:
-            raise RuntimeError("Malformed query: proximity search missing closing bracket")
+                    newQuery.append(symbol)
+            query = newQuery        
 
-        query = newQuery
+            if debugVerbose:
+                print("Post stage 4:")
+                print(query)
+                print()
 
-        if debugVerbose:
-            print("Post Stage 4:")
-            print(query)
-            print()
+            # Step 5: Handle positional search
 
-        # Convert terms into posting lists
-        query = [self.findDocumentsTermOccursIn(term) if self.isSymbolTerm(term) else term for term in query]
-
-        # Step 5: Handle the NOT cases
-        i = 0
-        newQuery = []
-        while i < len(query):
-            symbol = query[i]
-            i += 1
-            if symbol != "NOT":
-                newQuery.append(symbol)
-                continue
-            if i == len(query):
-                # TODO: Ask about if this needs to be able to handle
-                #       malformed queries
-                continue
-
-            nextSymbol = query[i]            
-            i += 1
-
-            if not self.isSymbolPostingList(nextSymbol):
-                continue
-            newQuery.append(self.negate(nextSymbol))
-        query = newQuery
-
-        if debugVerbose:
-            print("Post stage 5:")
-            print(query)
-            print()
-
-        # Step 6: Handle the AND cases
-        i = 0
-        newQuery = []
-        while i < len(query):
-            symbol = query[i]
-            if symbol != "AND":
-                newQuery.append(symbol)
+            newQuery = []
+            withinProximitySearchMode = False
+            proximityThreshold = -1
+            proximityTerms = []
+            i = 0
+            while i < len(query):
+                # TODO: Assumes that there only terms within proximity search brackets
+                symbol = query[i]
+                if self.isProximitySearchMarker(symbol):
+                    withinProximitySearchMode = True
+                    proximityThreshold = self.getProximityThresholdFromMarker(symbol)
+                elif symbol == ")#":
+                    if not withinProximitySearchMode:
+                        raise RuntimeError("Malformed query, proximity search closed before it was opened")
+                    withinProximitySearchMode = False
+                    newQuery.append(self.proximitySearch(proximityTerms, proximityThreshold))
+                    proximityTerms = []
+                    proximityThreshold = -1
+                else:
+                    if not withinProximitySearchMode:
+                        newQuery.append(symbol)
+                    else:
+                        if not self.isSymbolTerm(symbol):
+                            raise RuntimeError("Malformed query, non term symbol found inside proximity search")
+                        proximityTerms.append(symbol)
                 i += 1
-                continue
+            if withinProximitySearchMode:
+                raise RuntimeError("Malformed query: proximity search missing closing bracket")
 
-            if i == 0 or i == len(query) - 1:
-                # TODO: This is a malformed query, should handle this
-                #       at some point
+            query = newQuery
+
+            if debugVerbose:
+                print("Post Stage 5:")
+                print(query)
+                print()
+
+            # Convert terms into posting lists
+            query = [self.findDocumentsTermOccursIn(term) if self.isSymbolTerm(term) else term for term in query]
+
+            # Step 6: Handle the NOT cases
+            i = 0
+            newQuery = []
+            while i < len(query):
+                symbol = query[i]
                 i += 1
-                continue
-            previousSymbol = newQuery[len(newQuery) - 1]
-            nextSymbol = query[i + 1]
-            if not (self.isSymbolPostingList(previousSymbol) and self.isSymbolPostingList(nextSymbol)):
-            # TODO: Another malformed query (nothing AND TERM) or (TERM AND nothing)
+                if symbol != "NOT":
+                    newQuery.append(symbol)
+                    continue
+                if i == len(query):
+                    # TODO: Ask about if this needs to be able to handle
+                    #       malformed queries
+                    continue
+
+                nextSymbol = query[i]            
                 i += 1
-                continue
-            i += 2
-            newQuery.pop(len(newQuery) - 1)
-            newQuery.append(self.intersection(previousSymbol, nextSymbol))
 
-        query = newQuery
+                if not self.isSymbolPostingList(nextSymbol):
+                    continue
+                newQuery.append(self.negate(nextSymbol))
+            query = newQuery
 
-        if debugVerbose:
-            print("Post stage 6:")
-            print(query)
-            print()
+            if debugVerbose:
+                print("Post stage 6:")
+                print(query)
+                print()
 
-        # Step 7: Handle the OR cases
-        i = 0
-        newQuery = []
-        while i < len(query):
-            symbol = query[i]
-            if symbol != "OR":
-                newQuery.append(symbol)
-                i += 1
-                continue
+            # Step 7: Handle the AND cases
+            i = 0
+            newQuery = []
+            while i < len(query):
+                symbol = query[i]
+                if symbol != "AND":
+                    newQuery.append(symbol)
+                    i += 1
+                    continue
 
-            if i == 0 or i == len(query) - 1:
-                # TODO: This is a malformed query, should handle this
-                #       at some point
-                i += 1
-                continue
-            previousSymbol = newQuery[len(newQuery) - 1]
-            nextSymbol = query[i + 1]
-            if not (self.isSymbolPostingList(previousSymbol) and self.isSymbolPostingList(nextSymbol)):
-            # TODO: Another malformed query (nothing OR TERM) or (TERM OR nothing)
-                i += 1
-                continue
-            i += 2
-            newQuery.pop(len(newQuery) - 1)
-            newQuery.append(self.union(previousSymbol, nextSymbol))
+                if i == 0 or i == len(query) - 1:
+                    # TODO: This is a malformed query, should handle this
+                    #       at some point
+                    i += 1
+                    continue
+                previousSymbol = newQuery[len(newQuery) - 1]
+                nextSymbol = query[i + 1]
+                if not (self.isSymbolPostingList(previousSymbol) and self.isSymbolPostingList(nextSymbol)):
+                # TODO: Another malformed query (nothing AND TERM) or (TERM AND nothing)
+                    i += 1
+                    continue
+                i += 2
+                newQuery.pop(len(newQuery) - 1)
+                newQuery.append(self.intersection(previousSymbol, nextSymbol))
 
-        query = newQuery
+            query = newQuery
 
-        if debugVerbose:
-            print("Post stage 7:")
-            print(query)
-            print()
+            if debugVerbose:
+                print("Post stage 7:")
+                print(query)
+                print()
 
-        assert len(query) == 1
+            # Step 8: Handle the OR cases
+            i = 0
+            newQuery = []
+            while i < len(query):
+                symbol = query[i]
+                if symbol != "OR":
+                    newQuery.append(symbol)
+                    i += 1
+                    continue
 
-        return query[0]
+                if i == 0 or i == len(query) - 1:
+                    # TODO: This is a malformed query, should handle this
+                    #       at some point
+                    i += 1
+                    continue
+                previousSymbol = newQuery[len(newQuery) - 1]
+                nextSymbol = query[i + 1]
+                if not (self.isSymbolPostingList(previousSymbol) and self.isSymbolPostingList(nextSymbol)):
+                # TODO: Another malformed query (nothing OR TERM) or (TERM OR nothing)
+                    i += 1
+                    continue
+                i += 2
+                newQuery.pop(len(newQuery) - 1)
+                newQuery.append(self.union(previousSymbol, nextSymbol))
+
+            query = newQuery
+
+            if debugVerbose:
+                print("Post stage 8:")
+                print(query)
+                print()
+
+            assert len(query) == 1
+
+            answer.update(query[0])
+
+        return sorted(answer)
 
     def isWildCard(self, symbol):
         return symbol == "*"
