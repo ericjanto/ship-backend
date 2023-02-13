@@ -4,6 +4,7 @@ from PositionalInvertedIndexFactory import PositionalInvertedIndexFactory
 from PositionalInvertedIndexExporter import PositionalInvertedExporter
 from preprocessing import loadStopWordsIntoSet
 from TermCounts import TermCounts
+import pickle
 
 class DatabaseToIndex:
     def __init__(self, dbPathName, query):
@@ -46,17 +47,32 @@ class DatabaseToIndex:
         docTerms = PositionalInvertedIndexFactory.preprocessDocs(self.documents, stem=True, stopwords=self.stopWords)
         return pidxFactory.generateIndexFromPreprocessedDocs(docTerms, self.docIDs)
 
-    def __storeAllUniqueTerms(self):
+    def __storeAllUniqueTermCounts(self):
         tc = TermCounts(self.docIDs, self.documents, self.stopWords)
         tc.saveToBin('./data/term-counts.bin')
+    
+    def __storeAllUniqueTermsBeforeProcessing(self):
+        """
+        Stores the unique terms in the database before processing
+        """
+        docTerms = set()
+        for document in self.documents:
+            pidxFactory = PositionalInvertedIndexFactory()
+            docTerms.update(set(PositionalInvertedIndexFactory.preprocessDocs([document], stem=False, stopwords=self.stopWords)[0]))
+            # store doc terms in pickle file 
+        with open('./data/doc-terms.pickle', 'wb') as f:
+            pickle.dump(docTerms, f)
+        
 
     
     def storeUniqueTermsAndIndex(self):
         """
         Stores the unique terms in the database and indexes the chapters
         """
-        self.__storeAllUniqueTerms()
+        self.__storeAllUniqueTermsBeforeProcessing()
         print("Unique terms stored")
+        self.__storeAllUniqueTermCounts()
+        print("Term counts stored")
         pii =  self.__indexChapters()
         print("Indexing completed")
         pii.writeToBinary('./data/chapters-index.bin')

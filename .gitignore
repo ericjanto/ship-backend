@@ -13,3 +13,4 @@ output.xml
 !data/compressed*
 !data/term-counts.bin
 !data/chapters-index-vbytes.bin
+!data/doc-terms.pickle
