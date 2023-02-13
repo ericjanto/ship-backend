@@ -3,13 +3,16 @@ from preprocessing import loadStopWordsIntoSet
 from bm25 import BM25_Model
 from indexDecompressor import IndexDecompressor
 import pickle
-import re
 
-query_examples = ["I want both \"Harry\" AND \"Potter\"",
-                  "Who what who were AND (what OR (where AND are you))"]
+query_examples = ["Who what who were AND (what OR (where AND are you))",
+                  "supernatural and doctor who superwholock",
+                  "superwholock",
+                  "bionicles",
+                  "Bob Fraser in a zombie apocalypse",
+                  "Doctor Who",
+                  "Doctor Mallard"]
 
-CONNECTIVES = ['AND','OR']
-MODIFIERS = ['"','NOT','#','*']
+CONNECTIVES = ['AND','OR','and','or']
 
 class Search_Engine():
     def __init__(self,positionalInvertedIndex,stopwords,termcounts):
@@ -31,12 +34,11 @@ class Search_Engine():
 
     def recur_connectives(self,subquery):
         split_query = list(self.bracketed_split(subquery,CONNECTIVES,strip_brackets=False))
-        print(split_query)
-        if 'AND' in split_query:
+        if 'AND' in split_query or 'and' in split_query:
             token_1 = self.recur_connectives(split_query[0])
             token_2 = self.recur_connectives(split_query[-1])
             return token_1.intersection(token_2)
-        elif 'OR' in split_query:
+        elif 'OR' in split_query or 'or' in split_query:
             token_1 = self.recur_connectives(split_query[0])
             token_2 = self.recur_connectives(split_query[-1])
             return token_1.union(token_2)
@@ -46,8 +48,6 @@ class Search_Engine():
             curr_quote = []
             depth = 0
             for token in split_query[0]:
-                print(quotes)
-                print(curr_quote)
                 if token == '"' and depth == 0:
                     depth += 1
                     continue
@@ -60,9 +60,10 @@ class Search_Engine():
                     curr_quote += [token]
                 else:
                     or_str += [token]
-            query_str = '(' + ' OR '.join(or_str) + ')' if or_str else ''
-            quote_str = ' OR '.join([f"\"{' '.join(quote)}\"" for quote in quotes]) + ' AND ' if quotes else ''
-            query_str = f'{quote_str} {query_str}'
+            if quotes:
+                query_str = ' OR '.join([f"\"{' '.join(quote)}\"" for quote in quotes])
+            else:
+                query_str = ' OR '.join(or_str)
             results = set(self.boolean_engine.makeQuery(query_str,debugVerbose=True))
             return results
 
@@ -109,4 +110,4 @@ if __name__ == "__main__":
     stopwords = loadStopWordsIntoSet('englishStopWords.txt')
     print("Stopwords loaded")
     api = Search_Engine(index,stopwords,term_counts)
-    print(api.search(query_examples[0]))
+    print(api.search(query_examples[3]))

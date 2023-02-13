@@ -94,6 +94,7 @@ class BM25_Model():
 
         """
         k = 1.5
+        b = 0.75
         # TODO: k is a hyperparameter which can be tuned later on. Currently using best
         # practise value given from the lectures.
         results = []
@@ -105,8 +106,10 @@ class BM25_Model():
                 L_d = self.term_counts[doc_no]['tok_bfr_stemming']
                 avg_L = self.avg_doc_len
                 N = self.index.documentCount
-                term_1 = tf/(k*(L_d/avg_L) + tf + 0.5)
-                term_2 = np.log10((N-df+0.5)/(df+0.5))
+                C_td = (tf/(1-b + b*(L_d/avg_L))) + 0.5
+                #term_1 = tf*(k+1)/((tf+k)*(1-0.75+0.75*(L_d/avg_L)))
+                term_1 = ((k+1)*C_td)/(k+C_td)
+                term_2 = np.log10(((N+1)/(df+0.5)))
                 doc_score += term_1 * term_2
             results += [[doc_no,doc_score]]
         return results
