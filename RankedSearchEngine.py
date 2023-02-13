@@ -4,32 +4,55 @@ from preprocessing import loadStopWordsIntoSet
 from Preprocessor import Preprocessor
 from PositionalInvertedIndex import PositionalInvertedIndex
 from PositionalInvertedIndexFactory import PositionalInvertedIndexFactory
+import WildcardSearch
+from itertools import product
 
 class RankedSearchEngine():
 
-    def __init__(self, positionalInvertedIndex, stopwords=None, stem=True):
+    def __init__(self, positionalInvertedIndex, permutermIndexTrie, stopwords=None, stem=True):
         self.index = positionalInvertedIndex
+        self.permutermIndexTrie = permutermIndexTrie
         self.stopwords = stopwords
 
         self.stem = stem
 
     def makeQuery(self, query):
-        preprocessor = Preprocessor(query, self.stopwords)
-        preprocessor.normaliseCases()
-        preprocessor.removeStopWords()
-        if self.stem:
-            preprocessor.stemTerms()
+        expandedQueries = []
+        position2term = {}
+        query = query.split(" ")
+        for i in range(len(query)):
+            if "*" in query[i] and len(query[i]) > 1:
+                query[i] = WildcardSearch.clean_wildcard_term(query[i])
+                query[i] = WildcardSearch.rotate_query_term(query[i])
+                expandedTerm = self.permutermIndexTrie.search(query[i])
+                if expandedTerm == "NOT FOUND":
+                    position2term[i] = [query[i]] #this term surely won't be in the index because it contains $ and * characters
+                else:
+                    position2term[i] = list(expandedTerm)
+            else:
+                position2term[i] = [query[i]]
 
-        assert [term is not None or term != "" for term in preprocessor.terms]
-
-        queryTerms = preprocessor.terms
-
+        allPermutations = [dict(zip(position2term, v)) for v in product(*position2term.values())]
+        expandedQueries = [" ".join(d.values()) for d in allPermutations]
+        # print(expandedQueries)
         results = []
 
-        for docID in self.index.documentIDs:
-            similarity_score = self.queryScore(queryTerms, docID)
-            if similarity_score != 0:
-                results.append((docID, round(similarity_score, 4)))
+        for query in expandedQueries:
+            preprocessor = Preprocessor(query, self.stopwords)
+            preprocessor.normaliseCases()
+            preprocessor.removeStopWords()
+            if self.stem:
+                preprocessor.stemTerms()
+
+            assert [term is not None or term != "" for term in preprocessor.terms]
+
+            queryTerms = preprocessor.terms
+
+            for docID in self.index.documentIDs:
+                similarity_score = self.queryScore(queryTerms, docID)
+                if similarity_score != 0:
+                    results.append((docID, round(similarity_score, 4)))
+
         return sorted(results, key= lambda x: x[1], reverse=True)
 
 
