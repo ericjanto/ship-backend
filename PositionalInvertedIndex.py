@@ -1,5 +1,7 @@
 from math import log10
 import pickle
+from typing import Set
+
 from indexCompressor import *
 
 class PositionalInvertedIndex():
@@ -66,35 +68,42 @@ class PositionalInvertedIndex():
                 count += 1
         return count
 
-    def getTermDocumentFrequency(self, term):
-        if term not in self.terms:
-            return 0
-        return len(self.terms[term])
 
-    def getDocumentsTermFoundIn(self, term):
-        if term not in self.terms:
-            return []
-        return list(self.terms[term].keys())
-        
-
-    def tf(self, term, docID):
-        ''' Count the number of times a term occured in a document. '''
+    def getTermFrequency(self, term: str, docID: int) -> int:
+        ''' Count the number of times a term occurred in a document. '''
         if term not in self.terms:
             return 0
         if docID not in self.terms[term]:
             return 0
         return len(self.terms[term][docID])
 
-    def df(self, term):
-        '''
-        Count the number of documents where the specified 
-        term occurs at least once.
-        '''
+
+    def getDocFrequency(self, term: str) -> int:
         if term not in self.terms:
             return 0
         return len(self.terms[term])
 
-    def tfidf(self, term, docID):
+
+    def getDocumentsTermOccursIn(self, term: str) -> List[int]:
+        """
+        Returns the docID of every doc that contains the specified term
+        """
+        if term not in self.terms:
+            return []
+        return list(self.terms[term].keys())
+
+    def getPostingList(self, term: str, docID: int) -> List[int]:
+        """
+        Returns the posting list of a term in a specified document ID
+        """
+        
+        if term not in self.terms or docID not in  self.terms[term]:
+            return []
+        
+        return self.terms[term][docID]
+
+
+    def tfidf(self, term: str, docID: int) -> float:
         '''
         Computes the tf-idf score for a term in a 
         document from the indexed collection.
@@ -102,9 +111,24 @@ class PositionalInvertedIndex():
         If either the tf or df value are zero, will
         return 0
         '''
-        if self.df(term) == 0 or self.tf(term, docID) == 0:
+        if self.getDocFrequency(term) == 0 or self.getTermFrequency(term, docID) == 0:
             return 0
-        return (1 + log10(self.tf(term, docID))) * log10(self.documentCount / self.df(term))
+        return (1 + log10(self.getTermFrequency(term, docID))) * log10(self.documentCount / self.getDocFrequency(term))
+
+    def getNumDocs(self) -> int:
+        """
+        Returns the total number of documents
+        contained within the index
+        """
+        return self.documentCount
+
+    def getDocIDs(self) -> Set[int]:
+        """
+        Returns the set of documentIDs corresponding
+        to all the documents present in the index
+        """
+
+        return self.documentIDs
 
     # Largely keeping this so that we don't have to re-index, in case there are any [future] bugs with index compression
     def writeToBinary(self, filename): 
@@ -112,7 +136,7 @@ class PositionalInvertedIndex():
             pickle.dump(self, f)
         
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if not isinstance(other, PositionalInvertedIndex):
             return False
 

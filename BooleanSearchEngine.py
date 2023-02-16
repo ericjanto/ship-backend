@@ -353,7 +353,7 @@ class BooleanSearchEngine():
         return preprocessor.terms[0]
 
     def findDocumentsTermOccursIn(self, term):
-        return self.index.get_documents_for_term(term)
+        return self.index.getDocumentsTermOccursIn(term)
 
     def isProximitySearchMarker(self, symbol):
         return type(symbol) != list and re.match("#\d+\(?$", symbol) is not None

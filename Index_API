@@ -4,7 +4,7 @@ class Index_API():
     def init(self):
         pass
 
-    def term_frequency(self, term, docID):
+    def getTermFrequency(self, term, docID):
         """ Counts the number of times a term appears in a given document.
         Parameters
         ----------
@@ -19,7 +19,7 @@ class Index_API():
         """
         pass
     
-    def doc_frequency(self, term):
+    def getDocFrequency(self, term):
         """ Counts the number of documents a given term appears in.
         Parameters
         ----------
@@ -33,7 +33,7 @@ class Index_API():
         """
         pass
 
-    def get_num_documents(self):
+    def getNumDocs(self):
         """ Gets the number of documents that are indexed by our current index.
         Returns
         ----------
@@ -42,7 +42,7 @@ class Index_API():
         """
         pass
 
-    def get_documents_for_term(self,term):
+    def getDocumentsTermOccursIn(self,term):
         """ Get the document ID's for which the given term appears in.
         Parameters 
         ----------
@@ -56,7 +56,7 @@ class Index_API():
         """
         pass
 
-    def get_term_positions(self,term,docID):
+    def getPostingList(self,term,docID):
         """ Get the positions of where the given term appears in the document
         identified by the given document ID.
         Parameters
@@ -73,13 +73,13 @@ class Index_API():
         """
         pass
 
-    def get_doc_IDs(self):
+    def getDocIDs(self):
         """ Get document ID's for the whole collection indexed in our search 
         engine.
         Returns
         ----------
-        docIDs: List[Integer]
-            A list of all the unique identifiers for the documents indexed by our
+        docIDs: Set[Integer]
+            A set of all the unique identifiers for the documents indexed by our
             search engine.
         """
         pass
