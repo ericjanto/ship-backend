@@ -353,7 +353,7 @@ class BooleanSearchEngine():
         return preprocessor.terms[0]
 
     def findDocumentsTermOccursIn(self, term):
-        return self.index.getDocumentsTermFoundIn(term)
+        return self.index.get_documents_for_term(term)
 
     def isProximitySearchMarker(self, symbol):
         return type(symbol) != list and re.match("#\d+\(?$", symbol) is not None
@@ -407,9 +407,10 @@ class BooleanSearchEngine():
         # TODO: Abstract away access to self.index.terms
         # handles 1) case where * is at the very beginning of a phrase
         if startIndex == 1:
-            previousTermPositions = [(docID, pos) for docID in docs for pos in self.index.terms[orderedTerms[startIndex]][docID] if pos != 0]
+            previousTermPositions = [(docID, pos) for docID in docs for pos in self.index.get_term_positions(orderedTerms[startIndex],docID) if pos != 0]
+
         else:
-            previousTermPositions = [(docID, pos) for docID in docs for pos in self.index.terms[orderedTerms[startIndex]][docID]]
+            previousTermPositions = [(docID, pos) for docID in docs for pos in self.index.get_term_positions(orderedTerms[startIndex],docID)]
 
         # handles 2) case where * is between 2 words
         previousStar = False
@@ -419,14 +420,14 @@ class BooleanSearchEngine():
                 newPositions = []
                 for (docID, pos) in previousTermPositions: 
                     for pos2 in range(pos + 2, pos + 21): # O(1); upper limit - 20 terms (a sentence) in between 
-                        if pos2 in self.index.terms[term][docID]:
+                        if pos2 in self.index.get_term_positions(term,docID):
                             newPositions.append((docID, pos2))
                 previousTermPositions = newPositions
                 previousStar = False 
             elif term != "*" and not previousStar: # for terms which come after another term
                 newPositions = []
                 for (docID, pos) in previousTermPositions:
-                    if (pos + 1) in self.index.terms[term][docID]:
+                    if (pos + 1) in self.index.get_term_positions(term,docID):
                         newPositions.append((docID, pos + 1))
                 previousTermPositions = newPositions
                 previousStar = False
@@ -459,7 +460,7 @@ class BooleanSearchEngine():
         instances = []
         # Build positional list
         for term in terms:
-            for pos in self.index.terms[term][docID]:
+            for pos in self.index.get_term_positions(term,docID):
                 instances.append((term, pos))
         instances = sorted(instances, key=lambda x: x[1])
 
@@ -488,7 +489,7 @@ class BooleanSearchEngine():
     def orderedTermsWithinProximityInDocument(self, terms, docID, proximityThreshold):
         instances = []
         for term in terms:
-            for pos in self.index.terms[term][docID]:
+            for pos in self.index.get_term_positions(term,docID):
                 instances.append(term,pos)
         instances = sorted(instances, key=lambda x: x[1])
 
@@ -515,7 +516,7 @@ class BooleanSearchEngine():
         return False
 
     def negate(self, docs):
-        return sorted([x for x in self.index.documentIDs if x not in docs])
+        return sorted([x for x in self.index.get_doc_IDs() if x not in docs])
 
     def union(self, docs1, docs2):
 
