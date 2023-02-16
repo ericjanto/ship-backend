@@ -52,14 +52,15 @@ class Preprocessor():
         with open(filename, "w", encoding="utf-8") as f:
             f.writelines('\n'.join(self.terms).strip())
 
-    def preprocess(self, verbose=False, stem=True):
+    def preprocess(self, verbose=False, removeStopWords=True, stem=True):
         self.normaliseCases()
         if verbose:
             print("Normalised cases for " + self.filename)
 
-        self.removeStopWords()
-        if verbose:
-            print("Removed stop words from " + self.filename)
+        if removeStopWords:
+            self.removeStopWords()
+            if verbose:
+                print("Removed stop words from " + self.filename)
 
         if stem:
             self.stemTerms()
