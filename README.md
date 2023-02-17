@@ -28,3 +28,11 @@ Using the `enviroment.yml` you can create the new env.
    ```
    conda activate ir-backend
    ```
+
+## API Server
+
+Run the server with:
+
+```
+uvicorn api:app --reload
+```
