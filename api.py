@@ -1,10 +1,9 @@
 import pickle
 
 from aiocache import cached, Cache
-from aiocache.plugins import TimingPlugin
 from aiocache.serializers import PickleSerializer
 from fastapi import FastAPI
-from typing import Dict, List
+from typing import Dict
 
 from AO3_SearchEngine import Search_Engine
 from indexDecompressor import IndexDecompressor
@@ -109,8 +108,7 @@ serialiser = PickleSerializer()
 @cached(ttl=ttl, cache=Cache.MEMORY, serializer=serialiser)
 async def cached_search(query: str):
     """
-    ::TODO:: profiling
-    ::TODO:: documentation
+    Cache results returned from the search engine.
     """
     return seach_engine.search(query)
 
@@ -122,10 +120,30 @@ async def cached_search(query: str):
 
 def get_story_data(story_id) -> Dict[str, str | int]:
     """
-    ::TODO:: validate dictionary fields
     """
+    expected_keys = set([
+        "storyID",
+        "title",
+        "author",
+        "_compressedDescription",
+        "currentChapterCount",
+        "finalChapterCountKnown",
+        "finalChapterCount",
+        "finished",
+        "language",
+        "wordCount",
+        "commentCount",
+        "bookmarkCount",
+        "kudosCount",
+        "hitCount",
+        "lastUpdated",
+    ])
+
     # Assign default values, for when metadata not available
     story_data = StoryMetadataRecord().__dict__
+
+    assert story_data.keys() == expected_keys
+
     story_data.update({"storyID": story_id, "url": f"{AO3_BASE}{story_id}"})
 
     if story_id in metadata:
