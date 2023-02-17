@@ -1,18 +1,21 @@
 import pickle
 
+from aiocache import cached, Cache
+from aiocache.plugins import TimingPlugin
+from aiocache.serializers import PickleSerializer
 from fastapi import FastAPI
-from typing import Dict
+from typing import Dict, List
 
 from AO3_SearchEngine import Search_Engine
-from preprocessing import loadStopWordsIntoSet
 from indexDecompressor import IndexDecompressor
-from WildcardSearch import create_permuterm_index_trie
 from StoryMetadataLoader import StoryMetadataLoader
 from StoryMetadataRecord import StoryMetadataRecord
+from preprocessing import loadStopWordsIntoSet
+from WildcardSearch import create_permuterm_index_trie
 
 
 # ===============================================================
-# =========================== PATHS =============================
+# ========================= CONSTANTS ===========================
 # ===============================================================
 
 PATH_INDEX = "data/chapters-index-vbytes.bin"
@@ -20,6 +23,7 @@ PATH_TERM_COUNTS = "data/term-counts.bin"
 PATH_DOC_TERMS = "data/doc-terms.pickle"
 PATH_METADATA = "data/compressedMetadata.bin"
 
+AO3_BASE = "https://archiveofourown.org/works/"
 
 # ===============================================================
 # ===================== BACKEND INTEGRATION =====================
@@ -76,21 +80,11 @@ async def read_query(query: str, page: int, limit: int):
     Example request:
 
         {BASE_URL}/query/?query=Doctor%20Who&page=1&limit=15
-
-    ::TODO::
-    - [x] Retrieve metadata
-        - StoryMetadataLoader
-    - [ ] Set up query sessions (threading?) / caching
-        - aio cache
-    - [ ] Investigate if there's a good way to specify or validate
-        the returned JSON schema
     """
-
-    # Index the results using page and limit
     end = page * limit
     start = end - limit
 
-    results_query = seach_engine.search(query)
+    results_query = await cached_search(query)
 
     if start > len(results_query):
         return []
@@ -103,30 +97,36 @@ async def read_query(query: str, page: int, limit: int):
 
 
 # ===============================================================
+# ========================== CACHING ============================
+# ===============================================================
+# See https://github.com/aio-libs/aiocache#usage
+
+query_results_cache = Cache(Cache.MEMORY)
+ttl = 60 * 10  # How long we preserve query results for, in s
+serialiser = PickleSerializer()
+
+
+@cached(ttl=ttl, cache=Cache.MEMORY, serializer=serialiser)
+async def cached_search(query: str):
+    """
+    ::TODO:: profiling
+    ::TODO:: documentation
+    """
+    return seach_engine.search(query)
+
+
+# ===============================================================
 # ========================= UTILITY =============================
 # ===============================================================
 
 
 def get_story_data(story_id) -> Dict[str, str | int]:
+    """
+    ::TODO:: validate dictionary fields
+    """
     # Assign default values, for when metadata not available
-    story_data = {
-        "storyID": story_id,
-        "url": f"https://archiveofourown.org/works/{story_id}",
-        "title": None,
-        "author": None,
-        "_compressedDescription": None,
-        "currentChapterCount": None,
-        "finalChapterCountKnown": None,
-        "finalChapterCount": None,
-        "finished": None,
-        "language": None,
-        "wordCount": None,
-        "commentCount": None,
-        "bookmarkCount": None,
-        "kudosCount": None,
-        "hitCount": None,
-        "lastUpdated": None,
-    }
+    story_data = StoryMetadataRecord().__dict__
+    story_data.update({"storyID": story_id, "url": f"{AO3_BASE}{story_id}"})
 
     if story_id in metadata:
         story_data.update(metadata[story_id].__dict__)
