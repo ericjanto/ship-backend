@@ -118,35 +118,48 @@ async def cached_search(query: str):
 # ===============================================================
 
 
-def get_story_data(story_id) -> Dict[str, str | int]:
+def get_story_data(doc_id) -> Dict[str, str | int]:
     """
     """
-    expected_keys = set([
-        "storyID",
-        "title",
-        "author",
-        "_compressedDescription",
-        "currentChapterCount",
-        "finalChapterCountKnown",
-        "finalChapterCount",
-        "finished",
-        "language",
-        "wordCount",
-        "commentCount",
-        "bookmarkCount",
-        "kudosCount",
-        "hitCount",
-        "lastUpdated",
-    ])
+    expected_keys = set(
+        [
+            "storyID",
+            "title",
+            "author",
+            "_compressedDescription",
+            "currentChapterCount",
+            "finalChapterCountKnown",
+            "finalChapterCount",
+            "finished",
+            "language",
+            "wordCount",
+            "commentCount",
+            "bookmarkCount",
+            "kudosCount",
+            "hitCount",
+            "lastUpdated",
+        ]
+    )
+
+    story_id = doc_id // 1000
+    chapter_no = doc_id % 1000 + 1
 
     # Assign default values, for when metadata not available
     story_data = StoryMetadataRecord().__dict__
 
     assert story_data.keys() == expected_keys
 
-    story_data.update({"storyID": story_id, "url": f"{AO3_BASE}{story_id}"})
+    story_data.update(
+        {
+            "storyID": story_id,
+            "url": f"{AO3_BASE}{story_id}",
+            "chapterNumber": chapter_no,
+        }
+    )
 
     if story_id in metadata:
         story_data.update(metadata[story_id].__dict__)
+        del story_data['_compressedDescription']
+        story_data['description'] = metadata[story_id].getDescription()
 
     return story_data
