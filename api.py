@@ -121,6 +121,8 @@ async def cached_search(query: str):
 def get_story_data(doc_id) -> Dict[str, str | int]:
     """
     """
+
+    # NOTE: we add an url and description field later
     expected_keys = set(
         [
             "storyID",
