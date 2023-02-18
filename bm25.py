@@ -101,11 +101,11 @@ class BM25_Model():
         for doc_no in doc_nos:
             doc_score = 0
             for term in query:
-                tf = self.index.tf(term,doc_no)
-                df = self.index.df(term)
+                tf = self.index.getTermFrequency(term,doc_no)
+                df = self.index.getDocFrequency(term)
                 L_d = self.term_counts[doc_no]['tok_bfr_stemming']
                 avg_L = self.avg_doc_len
-                N = self.index.documentCount
+                N = self.index.getNumDocs()
                 C_td = (tf/(1-b + b*(L_d/avg_L))) + 0.5
                 #term_1 = tf*(k+1)/((tf+k)*(1-0.75+0.75*(L_d/avg_L)))
                 term_1 = ((k+1)*C_td)/(k+C_td)
@@ -129,7 +129,7 @@ class BM25_Model():
         query_terms = self.preprocess_query(query)
         doc_IDs = []
         for term in query_terms:
-            doc_list = self.index.terms.get(term,None)
+            doc_list = self.index.getDocumentsTermOccursIn(term)
             if doc_list:
                 doc_IDs += list(doc_list.keys())
         doc_IDs = list(set(doc_IDs))
