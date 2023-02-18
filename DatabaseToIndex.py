@@ -75,8 +75,6 @@ class DatabaseToIndex:
         print("Term counts stored")
         pii =  self.__indexChapters()
         print("Indexing completed")
-        pii.writeToBinary('./data/chapters-index.bin')
-        print("Saved pii to binary file")
         PositionalInvertedExporter.saveToCompressedIndex(pii, "./data/chapters-index-vbytes.bin")
         print("Saved index as vbytes")
         

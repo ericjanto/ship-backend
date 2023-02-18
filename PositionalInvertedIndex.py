@@ -130,11 +130,6 @@ class PositionalInvertedIndex():
 
         return self.documentIDs
 
-    # Largely keeping this so that we don't have to re-index, in case there are any [future] bugs with index compression
-    def writeToBinary(self, filename): 
-        with open(filename, 'wb') as f:
-            pickle.dump(self, f)
-        
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, PositionalInvertedIndex):
