@@ -122,7 +122,9 @@ def get_story_data(doc_id) -> Dict[str, str | int]:
     """
     """
 
-    # NOTE: we add an url and description field later
+    # NOTE:
+    #   we ADD these fields later: [url, chapterNumber, description]
+    #   we REMOVE these fields: [_decompressedDescription]
     expected_keys = set(
         [
             "storyID",
