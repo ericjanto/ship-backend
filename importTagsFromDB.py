@@ -31,7 +31,9 @@ class TagDBImporter():
 
             storyID = int(row[0])
 
-            tag = row[1]
+            # Reduce all tags to lower case, to make autocomplete easier
+
+            tag = row[1].lower()
 
             tagIndex.insertTagInstance(tag, storyID)
 
@@ -81,34 +83,34 @@ if __name__ == "__main__":
 
     importer = TagDBImporter(PATH_TO_DB)
 
-    # index = importer.importTagsToIndex(verbose=True, limit=10000000)
-    #
-    # compressedIndex = bytearray(tagIndexToVBytes(index))
-    #
-    # decompressor = IndexDecompressor(compressedIndex)
-    #
-    # decompressedIndex = decompressor.toTagIndex()
-    #
-    # print(index == decompressedIndex)
-    #
-    # ## TEST THAT WRITING THEN READING TO FILE WORKS
-    #
-    # SAVE_TO = "data/compressedTagIndex.bin"
-    #
-    # TagPositionalInvertedIndexExporter.saveToCompressedIndex(index, SAVE_TO)
-    #
-    # readInIndex = TagPositionalInvertedIndexLoader.loadFromCompressedFile(SAVE_TO)
-    #
-    # print(index == readInIndex)
+    index = importer.importTagsToIndex(verbose=True, limit=10000000)
 
-    preprocessedTagIndex = importer.importAndPreprocessTagsToIndex(stopwords, limit=10000000, verbose=True)
+    compressedIndex = bytearray(tagIndexToVBytes(index))
 
-    PREPROCESSED_INDEX_PATH = "data/compressedPreprocessedTagIndex.bin"
+    decompressor = IndexDecompressor(compressedIndex)
 
-    TagPositionalInvertedIndexExporter.saveToCompressedIndex(preprocessedTagIndex,PREPROCESSED_INDEX_PATH)
+    decompressedIndex = decompressor.toTagIndex()
 
-    readInPreprocessedIndex = TagPositionalInvertedIndexLoader.loadFromCompressedFile(PREPROCESSED_INDEX_PATH)
+    print(index == decompressedIndex)
 
-    print(preprocessedTagIndex == readInPreprocessedIndex)
+    ## TEST THAT WRITING THEN READING TO FILE WORKS
+
+    SAVE_TO = "data/compressedTagIndex.bin"
+
+    TagPositionalInvertedIndexExporter.saveToCompressedIndex(index, SAVE_TO)
+
+    readInIndex = TagPositionalInvertedIndexLoader.loadFromCompressedFile(SAVE_TO)
+
+    print(index == readInIndex)
+
+    # preprocessedTagIndex = importer.importAndPreprocessTagsToIndex(stopwords, limit=10000000, verbose=True)
+    #
+    # PREPROCESSED_INDEX_PATH = "data/compressedPreprocessedTagIndex.bin"
+    #
+    # TagPositionalInvertedIndexExporter.saveToCompressedIndex(preprocessedTagIndex,PREPROCESSED_INDEX_PATH)
+    #
+    # readInPreprocessedIndex = TagPositionalInvertedIndexLoader.loadFromCompressedFile(PREPROCESSED_INDEX_PATH)
+    #
+    # print(preprocessedTagIndex == readInPreprocessedIndex)
 
 
