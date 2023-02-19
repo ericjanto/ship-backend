@@ -63,6 +63,9 @@ class PrefixTree:
         """
         Returns a list of all words beginning with the given prefix, or
         an empty list if no words begin with that prefix.
+
+        NOTE: you might want to preprocess the prefix according to the
+        preprocessing the tree leaves received before insertion.
         """
         tags = []
         current = self.root
