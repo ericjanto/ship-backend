@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup as bs
 import PositionalInvertedIndexExporter
 from PositionalInvertedIndexFactory import PositionalInvertedIndexFactory
 from PositionalInvertedIndexExporter import PositionalInvertedExporter
+from PositionalInvertedIndexLoader import PositionalInvertedIndexLoader
 from PositionalInvertedIndex import PositionalInvertedIndex
 from preprocessing import loadStopWordsIntoSet
 from TermCounts import TermCounts
@@ -235,3 +236,5 @@ if __name__ == "__main__":
 
     dbIdx = ChapterDBImporter("smallerDB.sqlite3", QUERY)
     dbIdx.importChaptersToIndex("./data/compressed-chapter-indexes/", 2000)
+
+    reloadedIndex = PositionalInvertedIndexLoader.loadFromMultipleCompressedFiles("./data/compressed-chapter-indexes/")
