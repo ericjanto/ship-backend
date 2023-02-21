@@ -1,3 +1,4 @@
+import bisect
 from math import log10
 import pickle
 from typing import Set
@@ -27,17 +28,8 @@ class PositionalInvertedIndex():
             self.terms[term] = dict()
         if docID not in self.terms[term]:
             self.terms[term][docID] = []
-        #TODO: This uses a O(n) linear scan, but could be reduced to 
-        #      use a binary search instead. However, given that inserting
-        #      into the list still has O(n) runtime, it might not provide
-        #      much benefit
-        for i in range(len(self.terms[term][docID])):
-            if position == self.terms[term][docID][i]:
-                return
-            if position < self.terms[term][docID][i]:
-                self.terms[term][docID].insert(i, position)
-                return
-        self.terms[term][docID].append(position)
+
+        bisect.insort(self.terms[term][docID], position)
 
     def insertPostingList(self, term: str, docID: int, positions: List[int]) -> None:
         """ 
@@ -51,9 +43,15 @@ class PositionalInvertedIndex():
         if term not in self.terms:
             self.terms[term] = dict()
 
-        if docID not in selt.terms[term]:
+        if docID not in self.terms[term]:
             self.terms[term][docID] = positions
         else:
+            # TODO:
+            # This method explicitly assumes that a
+            # specific posting being added is not already
+            # in the index. For our use case, this isn't a problem
+            # due to how we split the index on importing, but it is
+            # worth looking at
             for pos in positions:
                 self.terms.insertTermInstance(term, docID, pos)
 
