@@ -130,7 +130,7 @@ class PositionalInvertedIndex():
 
         return self.documentIDs
 
-    def mergeWithOtherIndex(self, other: PositionalInvertedIndex) -> None:
+    def mergeWithOtherIndex(self, other) -> None:
         """Merges the contents of another index into this one"""
         for term in other.terms:
             for docID in other.terms[term]:
