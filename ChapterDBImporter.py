@@ -8,6 +8,7 @@ from PositionalInvertedIndexLoader import PositionalInvertedIndexLoader
 from PositionalInvertedIndex import PositionalInvertedIndex
 from preprocessing import loadStopWordsIntoSet
 from TermCounts import TermCounts
+from TermCountsExporter import TermCountsExporter
 from Preprocessor import Preprocessor
 import pickle
 
@@ -27,6 +28,9 @@ class ChapterDBImporter:
 
     def importChaptersToIndex(self, outputPath: str, chaptersPerChunk: int = 50000, limit=None, verbose=False) -> None:
         """Will flush the index to multiple vbyte compressed index chunks"""
+
+        if not os.path.exists(outputPath):
+            os.makedirs(outputPath)
 
         chunkNo = 0
         chaptersInCurrentChunk = 0
@@ -70,85 +74,8 @@ class ChapterDBImporter:
             outputTo = os.path.join(outputPath, f"chapterIndex-part-{chunkNo}.bin")
             PositionalInvertedExporter.saveToCompressedIndex(index, outputTo)
         
-        self.termCounter.saveToBin(os.path.join("./data/", "termCounts.bin"))
-
-
-
-class DatabaseToIndex:
-    def __init__(self, dbPathName, query):
-        self.conn = sqlite3.connect(dbPathName)
-        self.cursor = self.conn.cursor()
-        self.cursor.execute(query)
-        self.rows = self.cursor.fetchall()
-        self.docIDs = [row[0] for row in self.rows]
-        self.documents = [row[1] for row in self.rows]
-        self.stopWords = loadStopWordsIntoSet('englishStopWords.txt')
-
-    def convertChaptersToXML(self):
-        """
-        Converts the chapters in the database to XML
-        """
-        root = BeautifulSoup("<root></root>", "xml")
-        # Iterate over the rows and create child elements for each row
-        for row in self.rows:
-            child = root.new_tag("DOC")
-            id = root.new_tag("DOCNO")
-            id.string = str(row[0])
-            text = root.new_tag("TEXT")
-            text.string = row[1].encode('ascii', 'ignore').decode('ascii')
-            child.append(id)
-            child.append(text)
-            root.document.append(child)
-
-        # Write the XML to a file
-        with open("output.xml", "w") as file:
-            file.write(root.prettify())
-    
-    def closeConn(self):
-        self.cursor.close()
-
-    def __indexChapters(self):
-        """
-        Indexes the chapters in the database
-        """
-        pidxFactory = PositionalInvertedIndexFactory()
-        docTerms = PositionalInvertedIndexFactory.preprocessDocs(self.documents, stem=True, stopwords=self.stopWords)
-        return pidxFactory.generateIndexFromPreprocessedDocs(docTerms, self.docIDs)
-
-    def __storeAllUniqueTermCounts(self):
-        tc = TermCounts(self.stopWords)
-        tc.countTerms(self.docIDs, self.documents)
-        tc.saveToBin('./data/term-counts.bin')
-    
-    def __storeAllUniqueTermsBeforeProcessing(self):
-        """
-        Stores the unique terms in the database before processing
-        """
-        docTerms = set()
-        for document in self.documents:
-            pidxFactory = PositionalInvertedIndexFactory()
-            docTerms.update(set(PositionalInvertedIndexFactory.preprocessDocs([document], stem=False, stopwords=self.stopWords)[0]))
-            # store doc terms in pickle file 
-        with open('./data/doc-terms.pickle', 'wb') as f:
-            pickle.dump(docTerms, f)
-        
-
-    
-    def storeUniqueTermsAndIndex(self):
-        """
-        Stores the unique terms in the database and indexes the chapters
-        """
-        self.__storeAllUniqueTermsBeforeProcessing()
-        print("Unique terms stored")
-        self.__storeAllUniqueTermCounts()
-        print("Term counts stored")
-        pii =  self.__indexChapters()
-        print("Indexing completed")
-        PositionalInvertedExporter.saveToCompressedIndex(pii, "./data/chapters-index-vbytes.bin")
-        print("Saved index as vbytes")
-        
+        TermCountsExporter.saveToFile(os.path.join("./data/", "termCounts.bin"), self.termCounter.termCounts)
             
-        
         
 if __name__ == "__main__":
     """
@@ -234,13 +161,13 @@ if __name__ == "__main__":
     QUERY = "SELECT docID, text FROM ChaptersWithStoryInfo;"
     ### Create a table for the query above
     
-    # dbIdx = DatabaseToIndex("smallerDB.sqlite3", QUERY)
+    # dbIdx = DatabaseToIndex("../smallerDB.sqlite3", QUERY)
     # dbIdx.storeUniqueTermsAndIndex()
     # dbIdx.closeConn()
 
-    # dbIdx = ChapterDBImporter("smallerDB.sqlite3", QUERY)
-    # dbIdx.importChaptersToIndex("./data/compressed-chapter-indexes/", 2000)
+    dbIdx = ChapterDBImporter("smallerDB.sqlite3", QUERY)
+    dbIdx.importChaptersToIndex("./data/compressed-chapter-indexes/", 2000)
 
     reloadedIndex = PositionalInvertedIndexLoader.loadFromMultipleCompressedFiles("./data/compressed-chapter-indexes/", verbose=True)
-    pii_single = PositionalInvertedIndexLoader.loadFromCompressedFile("chapters-index-vbytes.bin")
+    pii_single = PositionalInvertedIndexLoader.loadFromCompressedFile("./data/chapters-index-vbytes.bin")
     print(pii_single == reloadedIndex)
