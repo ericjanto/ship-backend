@@ -28,6 +28,9 @@ class ChapterDBImporter:
     def importChaptersToIndex(self, outputPath: str, chaptersPerChunk: int = 50000, limit=None, verbose=False) -> None:
         """Will flush the index to multiple vbyte compressed index chunks"""
 
+        if not os.path.exists(outputPath):
+            os.makedirs(outputPath)
+
         chunkNo = 0
         chaptersInCurrentChunk = 0
 
@@ -234,7 +237,7 @@ if __name__ == "__main__":
     QUERY = "SELECT docID, text FROM ChaptersWithStoryInfo;"
     ### Create a table for the query above
     
-    # dbIdx = DatabaseToIndex("smallerDB.sqlite3", QUERY)
+    # dbIdx = DatabaseToIndex("../smallerDB.sqlite3", QUERY)
     # dbIdx.storeUniqueTermsAndIndex()
     # dbIdx.closeConn()
 
@@ -242,5 +245,5 @@ if __name__ == "__main__":
     # dbIdx.importChaptersToIndex("./data/compressed-chapter-indexes/", 2000)
 
     reloadedIndex = PositionalInvertedIndexLoader.loadFromMultipleCompressedFiles("./data/compressed-chapter-indexes/", verbose=True)
-    pii_single = PositionalInvertedIndexLoader.loadFromCompressedFile("chapters-index-vbytes.bin")
+    pii_single = PositionalInvertedIndexLoader.loadFromCompressedFile("./data/chapters-index-vbytes.bin")
     print(pii_single == reloadedIndex)
