@@ -39,14 +39,10 @@ class PositionalInvertedIndex():
                 return
         self.terms[term][docID].append(position)
 
-    def insertPostingList(self, term, docID, positions):
+    def insertPostingList(self, term: str, docID: int, positions: List[int]) -> None:
         """ 
-        Should only use this when importing an existing
-        index, and never when adding new entries to an existing
-        index. This is because this will override the postings
-        list for term at docID.
-
-        positions must be a list
+        TODO: Make this faster when inserting into a posting
+        list that already exists
         """
         if docID not in self.documentIDs:
             self.documentIDs.add(docID)
@@ -55,7 +51,11 @@ class PositionalInvertedIndex():
         if term not in self.terms:
             self.terms[term] = dict()
 
-        self.terms[term][docID] = positions
+        if docID not in selt.terms[term]:
+            self.terms[term][docID] = positions
+        else:
+            for pos in positions:
+                self.terms.insertTermInstance(term, docID, pos)
 
     def getDistinctTermsCount(self):
         return len(self.terms.keys())
@@ -130,6 +130,11 @@ class PositionalInvertedIndex():
 
         return self.documentIDs
 
+    def mergeWithOtherIndex(self, other: PositionalInvertedIndex) -> None:
+        """Merges the contents of another index into this one"""
+        for term in other.terms:
+            for docID in other.terms[term]:
+                self.insertPostingList(term, docID, other.terms[term][docID])
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, PositionalInvertedIndex):
