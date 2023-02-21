@@ -21,7 +21,9 @@ class ChapterDBImporter:
         self.cursor = self.conn.cursor()
 
         #TODO: Make this configurable
-        self.preprocessor = Preprocessor(None, loadStopWordsIntoSet("englishStopWords.txt"))
+        self.stopWords = loadStopWordsIntoSet('englishStopWords.txt')
+        self.preprocessor = Preprocessor(None, self.stopWords)
+        self.termCounter = TermCounts(self.stopWords)
 
     def importChaptersToIndex(self, outputPath: str, chaptersPerChunk: int = 50000, limit=None, verbose=False) -> None:
         """Will flush the index to multiple vbyte compressed index chunks"""
@@ -31,7 +33,7 @@ class ChapterDBImporter:
 
         index = PositionalInvertedIndex()
 
-        self.cursor.execute(self.query)
+        self.cursor.execute(self.query) # Assuming this doesn't cause RAM issues, ie, doesn't load everything
 
         for i, row in enumerate(self.cursor):
 
@@ -43,7 +45,7 @@ class ChapterDBImporter:
 
             docID = row[0]
             chapter = row[1]
-
+            self.termCounter.countTermsRowWise(chapter, docID)
             preprocessedChapter = self.preprocessor.preprocessDocument(chapter)
 
             for pos, term in enumerate(preprocessedChapter):
@@ -66,8 +68,9 @@ class ChapterDBImporter:
             if os.path.exists(outputPath) == False:
                 os.makedirs(outputPath)
             outputTo = os.path.join(outputPath, f"chapterIndex-part-{chunkNo}.bin")
-            print(outputTo)
             PositionalInvertedExporter.saveToCompressedIndex(index, outputTo)
+        
+        self.termCounter.saveToBin(os.path.join("./data/", "termCounts.bin"))
 
 
 
@@ -113,7 +116,8 @@ class DatabaseToIndex:
         return pidxFactory.generateIndexFromPreprocessedDocs(docTerms, self.docIDs)
 
     def __storeAllUniqueTermCounts(self):
-        tc = TermCounts(self.docIDs, self.documents, self.stopWords)
+        tc = TermCounts(self.stopWords)
+        tc.countTerms(self.docIDs, self.documents)
         tc.saveToBin('./data/term-counts.bin')
     
     def __storeAllUniqueTermsBeforeProcessing(self):
@@ -238,3 +242,5 @@ if __name__ == "__main__":
     # dbIdx.importChaptersToIndex("./data/compressed-chapter-indexes/", 2000)
 
     reloadedIndex = PositionalInvertedIndexLoader.loadFromMultipleCompressedFiles("./data/compressed-chapter-indexes/", verbose=True)
+    pii_single = PositionalInvertedIndexLoader.loadFromCompressedFile("chapters-index-vbytes.bin")
+    print(pii_single == reloadedIndex)
