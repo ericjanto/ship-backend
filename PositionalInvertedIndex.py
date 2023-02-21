@@ -29,7 +29,7 @@ class PositionalInvertedIndex():
         if docID not in self.terms[term]:
             self.terms[term][docID] = []
 
-        bisect.insort(self.terms[docID], position)
+        bisect.insort(self.terms[term][docID], position)
 
     def insertPostingList(self, term: str, docID: int, positions: List[int]) -> None:
         """ 
