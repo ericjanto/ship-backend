@@ -43,7 +43,7 @@ class PositionalInvertedIndex():
         if term not in self.terms:
             self.terms[term] = dict()
 
-        if docID not in selt.terms[term]:
+        if docID not in self.terms[term]:
             self.terms[term][docID] = positions
         else:
             for pos in positions:

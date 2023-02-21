@@ -55,14 +55,14 @@ class PositionalInvertedIndexLoader():
 
         index = PositionalInvertedIndex()
 
-        indexFiles = [f for f in os.listdir(pathToFiles) if os.path.isfile(os.path.join(mypath, f))]
+        indexFiles = [f for f in os.listdir(pathToFiles) if os.path.isfile(os.path.join(pathToFiles, f))]
 
         indexFiles.sort()
 
         for i, file in enumerate(indexFiles):
             pathToFile = os.path.join(pathToFiles, file)
             indexChunk = PositionalInvertedIndexLoader.loadFromCompressedFile(pathToFile)
-
+            
             index.mergeWithOtherIndex(indexChunk)
 
             if verbose:
