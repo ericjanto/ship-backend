@@ -1,11 +1,13 @@
+import os
 import sqlite3
 from bs4 import BeautifulSoup as bs
-
 import PositionalInvertedIndexExporter
 from PositionalInvertedIndexFactory import PositionalInvertedIndexFactory
 from PositionalInvertedIndexExporter import PositionalInvertedExporter
+from PositionalInvertedIndex import PositionalInvertedIndex
 from preprocessing import loadStopWordsIntoSet
 from TermCounts import TermCounts
+from Preprocessor import Preprocessor
 import pickle
 
 class ChapterDBImporter:
@@ -41,7 +43,7 @@ class ChapterDBImporter:
             docID = row[0]
             chapter = row[1]
 
-            preprocessedChapter = self.preprocessor.preprocessDocument()
+            preprocessedChapter = self.preprocessor.preprocessDocument(chapter)
 
             for pos, term in enumerate(preprocessedChapter):
                 index.insertTermInstance(term, docID, pos)
@@ -49,8 +51,10 @@ class ChapterDBImporter:
 
             if chaptersInCurrentChunk == chaptersPerChunk:
                 # Flush index to file
+                if os.path.exists(outputPath) == False:
+                    os.makedirs(outputPath)
                 outputTo = os.path.join(outputPath, f"chapterIndex-part-{chunkNo}.bin")
-                PositionalInvertedIndexExporter.saveToCompressedIndex(index, outputTo)
+                PositionalInvertedExporter.saveToCompressedIndex(index, outputTo)
 
                 chunkNo += 1
                 chaptersInCurrentChunk = 0
@@ -58,8 +62,11 @@ class ChapterDBImporter:
                 index = PositionalInvertedIndex()
 
         if chaptersInCurrentChunk != 0:
+            if os.path.exists(outputPath) == False:
+                os.makedirs(outputPath)
             outputTo = os.path.join(outputPath, f"chapterIndex-part-{chunkNo}.bin")
-            PositionalInvertedIndexExporter.saveToCompressedIndex(index, outputTo)
+            print(outputTo)
+            PositionalInvertedExporter.saveToCompressedIndex(index, outputTo)
 
 
 
@@ -227,4 +234,4 @@ if __name__ == "__main__":
     # dbIdx.closeConn()
 
     dbIdx = ChapterDBImporter("smallerDB.sqlite3", QUERY)
-    dbIdx.importChaptersToIndex("data/compressed-chapter-indexes/", 2000)
+    dbIdx.importChaptersToIndex("./data/compressed-chapter-indexes/", 2000)
