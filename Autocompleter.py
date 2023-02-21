@@ -28,7 +28,8 @@ class Autocompleter:
         NOTE: sorting for every request might be too expensive for cases
         where there are many leaves which share the same prefix?
         """
-        completed_tags = self.pt.autocomplete(prefix)
+
+        completed_tags = self.pt.autocomplete(prefix.lower())
 
         # k[0] = frequency of tag, k[1] is tag itself
         key_sort = lambda k: (k[1], Reversor(k[0]))
@@ -47,7 +48,7 @@ class Autocompleter:
             containing 1491127 tags. This might not be efficient enough / we
             might want to only do this once.
         """
-        print("Decompressing ")
+        print("Decompressing index")
         self.tag_index = TagPositionalInvertedIndexLoader.loadFromCompressedFile(
             path_to_compressed_tag_index
         )
@@ -84,5 +85,5 @@ if __name__ == '__main__':
     autocompleter = Autocompleter(PATH_TAG_INDEX)
 
     n = 5
-    print(autocompleter.get_ranked_autocomplete('harry', n))
-    print(autocompleter.get_ranked_autocomplete('l', n))
+    print(autocompleter.get_ranked_autocomplete('angst', n))
+    print(autocompleter.get_ranked_autocomplete('Angst', n))
