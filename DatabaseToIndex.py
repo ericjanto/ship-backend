@@ -16,7 +16,7 @@ class DatabaseToIndex:
         self.documents = [row[1] for row in self.rows]
         self.stopWords = loadStopWordsIntoSet('englishStopWords.txt')
 
-    def conbvertChaptersToXML(self):
+    def convertChaptersToXML(self):
         """
         Converts the chapters in the database to XML
         """
