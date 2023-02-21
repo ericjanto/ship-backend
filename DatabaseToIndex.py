@@ -8,6 +8,7 @@ from PositionalInvertedIndexLoader import PositionalInvertedIndexLoader
 from PositionalInvertedIndex import PositionalInvertedIndex
 from preprocessing import loadStopWordsIntoSet
 from TermCounts import TermCounts
+from TermCountsExporter import TermCountsExporter
 from Preprocessor import Preprocessor
 import pickle
 
@@ -73,7 +74,7 @@ class ChapterDBImporter:
             outputTo = os.path.join(outputPath, f"chapterIndex-part-{chunkNo}.bin")
             PositionalInvertedExporter.saveToCompressedIndex(index, outputTo)
         
-        self.termCounter.saveToBin(os.path.join("./data/", "termCounts.bin"))
+        TermCountsExporter.saveToFile(os.path.join("./data/", "termCounts.bin"), self.termCounter.termCounts)
 
 
 
@@ -241,8 +242,8 @@ if __name__ == "__main__":
     # dbIdx.storeUniqueTermsAndIndex()
     # dbIdx.closeConn()
 
-    # dbIdx = ChapterDBImporter("smallerDB.sqlite3", QUERY)
-    # dbIdx.importChaptersToIndex("./data/compressed-chapter-indexes/", 2000)
+    dbIdx = ChapterDBImporter("smallerDB.sqlite3", QUERY)
+    dbIdx.importChaptersToIndex("./data/compressed-chapter-indexes/", 2000)
 
     reloadedIndex = PositionalInvertedIndexLoader.loadFromMultipleCompressedFiles("./data/compressed-chapter-indexes/", verbose=True)
     pii_single = PositionalInvertedIndexLoader.loadFromCompressedFile("./data/chapters-index-vbytes.bin")

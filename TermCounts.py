@@ -57,9 +57,4 @@ class TermCounts():
                                     unique_tokens_before_stemming,
                                     tokens_after_stemming_count
                                     ]
-
-
-    def saveToBin(self, path):
-        with open(path, 'wb') as f:
-            pickle.dump(self.termCounts, f)
                 
