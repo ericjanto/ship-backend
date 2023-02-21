@@ -46,6 +46,12 @@ class PositionalInvertedIndex():
         if docID not in self.terms[term]:
             self.terms[term][docID] = positions
         else:
+            # TODO:
+            # This method explicitly assumes that a
+            # specific posting being added is not already
+            # in the index. For our use case, this isn't a problem
+            # due to how we split the index on importing, but it is
+            # worth looking at
             for pos in positions:
                 self.terms.insertTermInstance(term, docID, pos)
 
