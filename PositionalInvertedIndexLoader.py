@@ -47,8 +47,28 @@ class PositionalInvertedIndexLoader():
         return decompressor.toIndex()
 
 
+    @staticmethod
+    def loadFromMultipleCompressedFiles(pathToFiles: str, verbose: bool = False) -> PositionalInvertedIndex:
+        # Assumes that every file in the specified directory is a compressed index
+        if not os.path.exists(pathToFiles):
+            raise FileNotFoundError(f"{pathToFiles} does not exist")
 
+        index = PositionalInvertedIndex()
 
+        indexFiles = [f for f in os.listdir(pathToFiles) if os.path.isfile(os.path.join(mypath, f))]
+
+        indexFiles.sort()
+
+        for i, file in enumerate(indexFiles):
+            pathToFile = os.path.join(pathToFiles, file)
+            indexChunk = PositionalInvertedIndexLoader.loadFromCompressedFile(pathToFile)
+
+            index.mergeWithOtherIndex(indexChunk)
+
+            if verbose:
+                print(f"Loaded and merged {i + 1} of {len(indexFiles)} index chunks")
+
+        return index
 
 
 if __name__ == "__main__":
