@@ -51,7 +51,7 @@ class PositionalInvertedIndex():
         if term not in self.terms:
             self.terms[term] = dict()
 
-        if docID not in selt.terms[term]:
+        if docID not in self.terms[term]:
             self.terms[term][docID] = positions
         else:
             for pos in positions:
@@ -130,7 +130,7 @@ class PositionalInvertedIndex():
 
         return self.documentIDs
 
-    def mergeWithOtherIndex(self, other: PositionalInvertedIndex) -> None:
+    def mergeWithOtherIndex(self, other) -> None:
         """Merges the contents of another index into this one"""
         for term in other.terms:
             for docID in other.terms[term]:

@@ -234,7 +234,7 @@ if __name__ == "__main__":
     # dbIdx.storeUniqueTermsAndIndex()
     # dbIdx.closeConn()
 
-    dbIdx = ChapterDBImporter("smallerDB.sqlite3", QUERY)
-    dbIdx.importChaptersToIndex("./data/compressed-chapter-indexes/", 2000)
+    # dbIdx = ChapterDBImporter("smallerDB.sqlite3", QUERY)
+    # dbIdx.importChaptersToIndex("./data/compressed-chapter-indexes/", 2000)
 
-    reloadedIndex = PositionalInvertedIndexLoader.loadFromMultipleCompressedFiles("./data/compressed-chapter-indexes/")
+    reloadedIndex = PositionalInvertedIndexLoader.loadFromMultipleCompressedFiles("./data/compressed-chapter-indexes/", verbose=True)
