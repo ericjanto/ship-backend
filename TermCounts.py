@@ -40,8 +40,8 @@ class TermCounts():
             print(f"Duplicate docID: {docId} found! Skipping...")
             return
         tokens_before_processing = self.preprocessor.preprocessDocument(row, removeStopWords=False, stem=False)
-        tokens_before_stemming = self.preprocessor.preprocessDocument(row, removeStopWords=True, stem=False)
-        tokens_after_stemming = self.preprocessor.preprocessDocument(row, removeStopWords=True, stem=True)
+        tokens_before_stemming = self.preprocessor.removeStopWords()
+        tokens_after_stemming = self.preprocessor.stemTerms()
 
         tokens_before_processing_count = len(tokens_before_processing)
         tokens_before_stemming_count = len(tokens_before_stemming)
