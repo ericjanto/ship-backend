@@ -1,10 +1,67 @@
 import sqlite3
 from bs4 import BeautifulSoup as bs
+
+import PositionalInvertedIndexExporter
 from PositionalInvertedIndexFactory import PositionalInvertedIndexFactory
 from PositionalInvertedIndexExporter import PositionalInvertedExporter
 from preprocessing import loadStopWordsIntoSet
 from TermCounts import TermCounts
 import pickle
+
+class ChapterDBImporter:
+
+    def __init__(self, pathToDB: str, query: str) -> None:
+        self.query = query
+
+        self.conn = sqlite3.connect(pathToDB)
+
+        self.cursor = self.conn.cursor()
+
+        #TODO: Make this configurable
+        self.preprocessor = Preprocessor(None, loadStopWordsIntoSet("englishStopWords.txt"))
+
+    def importChaptersToIndex(self, outputPath: str, chaptersPerChunk: int = 50000, limit=None, verbose=False) -> None:
+        """Will flush the index to multiple vbyte compressed index chunks"""
+
+        chunkNo = 0
+        chaptersInCurrentChunk = 0
+
+        index = PositionalInvertedIndex()
+
+        self.cursor.execute(self.query)
+
+        for i, row in enumerate(self.cursor):
+
+            if limit and i >= limit:
+                break
+
+            if verbose and i % 100000 == 0:
+                print(f"Preprocessed and indexed {i/ 1000000} million chapters")
+
+            docID = row[0]
+            chapter = row[1]
+
+            preprocessedChapter = self.preprocessor.preprocessDocument()
+
+            for pos, term in enumerate(preprocessedChapter):
+                index.insertTermInstance(term, docID, pos)
+            chaptersInCurrentChunk += 1
+
+            if chaptersInCurrentChunk == chaptersPerChunk:
+                # Flush index to file
+                outputTo = os.path.join(outputPath, f"chapterIndex-part-{chunkNo}.bin")
+                PositionalInvertedIndexExporter.saveToCompressedIndex(index, outputTo)
+
+                chunkNo += 1
+                chaptersInCurrentChunk = 0
+
+                index = PositionalInvertedIndex()
+
+        if chaptersInCurrentChunk != 0:
+            outputTo = os.path.join(outputPath, f"chapterIndex-part-{chunkNo}.bin")
+            PositionalInvertedIndexExporter.saveToCompressedIndex(index, outputTo)
+
+
 
 class DatabaseToIndex:
     def __init__(self, dbPathName, query):
@@ -165,6 +222,9 @@ if __name__ == "__main__":
     QUERY = "SELECT docID, text FROM ChaptersWithStoryInfo;"
     ### Create a table for the query above
     
-    dbIdx = DatabaseToIndex("smallerDB.sqlite3", QUERY)
-    dbIdx.storeUniqueTermsAndIndex()
-    dbIdx.closeConn()
+    # dbIdx = DatabaseToIndex("smallerDB.sqlite3", QUERY)
+    # dbIdx.storeUniqueTermsAndIndex()
+    # dbIdx.closeConn()
+
+    dbIdx = ChapterDBImporter("smallerDB.sqlite3", QUERY)
+    dbIdx.importChaptersToIndex("data/compressed-chapter-indexes/", 2000)
