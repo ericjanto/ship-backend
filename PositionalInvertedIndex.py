@@ -1,3 +1,4 @@
+import bisect
 from math import log10
 import pickle
 from typing import Set
@@ -27,26 +28,13 @@ class PositionalInvertedIndex():
             self.terms[term] = dict()
         if docID not in self.terms[term]:
             self.terms[term][docID] = []
-        #TODO: This uses a O(n) linear scan, but could be reduced to 
-        #      use a binary search instead. However, given that inserting
-        #      into the list still has O(n) runtime, it might not provide
-        #      much benefit
-        for i in range(len(self.terms[term][docID])):
-            if position == self.terms[term][docID][i]:
-                return
-            if position < self.terms[term][docID][i]:
-                self.terms[term][docID].insert(i, position)
-                return
-        self.terms[term][docID].append(position)
 
-    def insertPostingList(self, term, docID, positions):
+        bisect.insort(self.terms[term][docID], position)
+
+    def insertPostingList(self, term: str, docID: int, positions: List[int]) -> None:
         """ 
-        Should only use this when importing an existing
-        index, and never when adding new entries to an existing
-        index. This is because this will override the postings
-        list for term at docID.
-
-        positions must be a list
+        TODO: Make this faster when inserting into a posting
+        list that already exists
         """
         if docID not in self.documentIDs:
             self.documentIDs.add(docID)
@@ -55,7 +43,17 @@ class PositionalInvertedIndex():
         if term not in self.terms:
             self.terms[term] = dict()
 
-        self.terms[term][docID] = positions
+        if docID not in self.terms[term]:
+            self.terms[term][docID] = positions
+        else:
+            # TODO:
+            # This method explicitly assumes that a
+            # specific posting being added is not already
+            # in the index. For our use case, this isn't a problem
+            # due to how we split the index on importing, but it is
+            # worth looking at
+            for pos in positions:
+                self.terms.insertTermInstance(term, docID, pos)
 
     def getDistinctTermsCount(self):
         return len(self.terms.keys())
@@ -130,6 +128,11 @@ class PositionalInvertedIndex():
 
         return self.documentIDs
 
+    def mergeWithOtherIndex(self, other) -> None:
+        """Merges the contents of another index into this one"""
+        for term in other.terms:
+            for docID in other.terms[term]:
+                self.insertPostingList(term, docID, other.terms[term][docID])
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, PositionalInvertedIndex):

@@ -3,7 +3,9 @@ from preprocessing import loadStopWordsIntoSet
 from bm25 import BM25_Model
 from indexDecompressor import IndexDecompressor
 from WildcardSearch import create_permuterm_index_trie
+from TagPositionalInvertedIndexLoader import TagPositionalInvertedIndexLoader
 import pickle
+import numpy as np
 
 query_examples = ["Who what who were AND (what OR (where AND are you))",
                   "supernatural and doctor who superwholock",
@@ -20,13 +22,16 @@ query_examples = ["Who what who were AND (what OR (where AND are you))",
 CONNECTIVES = ['AND','OR','and','or']
 
 class Search_Engine():
-    def __init__(self,positionalInvertedIndex,permutermIndexTrie,stopwords,termcounts):
+    def __init__(self,positionalInvertedIndex,permutermIndexTrie,tagIndex,stopwords,termcounts):
         self.index = positionalInvertedIndex
         self.stopwords = stopwords
         self.termcounts = termcounts
         self.permutermIndexTrie = permutermIndexTrie
+        self.tagIndex = tagIndex
         self.boolean_engine = BooleanSearchEngine(self.index,self.permutermIndexTrie,self.stopwords)
         self.ranker = BM25_Model(self.index,self.stopwords,self.termcounts)
+        total_term_counts = sum([term_counts[docID]['tok_bfr_stemming'] for docID in term_counts])
+        self.avg_doc_len = total_term_counts/len(term_counts.keys())
     
     def search(self,query):
         query = query.replace('(',' ( ')
@@ -43,8 +48,21 @@ class Search_Engine():
             tokens += expanded_terms
         query = ' '.join(tokens)
         terms = self.ranker.preprocess_query(query)
-        doc_score_pairs = self.ranker.score_documents(terms,doc_IDs)
-        return sorted(doc_score_pairs,key=lambda x: x[1], reverse=True)
+        tag_docIDs = self.tag_search(terms)
+        doc_IDs = doc_IDs.union(tag_docIDs)
+        doc_score_pairs = dict.fromkeys(doc_IDs)
+        
+
+        query_scores = self.ranker.score_documents(terms,doc_IDs)
+        tag_scores = self.score_tag_docs(terms,tag_docIDs)
+        
+        for docID,score in query_scores:
+            doc_score_pairs[docID] += score
+        
+        for docID,score in tag_scores:
+            doc_score_pairs[docID] += score
+        
+        return sorted(doc_score_pairs.items(),key=lambda x: x[1], reverse=True)
 
     def recur_connectives(self,subquery):
         split_query = self.bracketed_split(subquery,CONNECTIVES,strip_brackets=False)
@@ -64,7 +82,7 @@ class Search_Engine():
                 query_str = ' OR '.join(or_str)
             results = set(self.boolean_engine.makeQuery(query_str))
             return results
-
+    
     def bracketed_split(self,string, delimiter, strip_brackets=False):
         openers = '('
         closers = ')'
@@ -109,27 +127,53 @@ class Search_Engine():
                 or_str += [token]
         return quotes,or_str
 
+    def tag_search(self, tags):
+        docIDs = set()
+        for tag in tags:
+            docIDs = docIDs.union(set(self.tagIndex.getStoryIDsWithTag(tag)))
+        return docIDs
+
+    def score_tag_docs(self, tags, docIDs):
+        k = 1.5
+        b = 0.75
+        results = []
+        for doc_ID in docIDs:
+            doc_score = 0
+            for token in tags:
+                tf = 1
+                df = self.tagIndex.getTagFrequency(token)
+                L_d = self.termcounts[doc_ID]['tok_bfr_stemming']
+                avg_L = self.avg_doc_len
+                N = self.index.getNumDocs()
+                C_td = (tf/(1-b + b*(L_d/avg_L))) + 0.5
+                term_1 = ((k+1)*C_td)/(k+C_td)
+                term_2 = np.log10(((N+1)/(df+0.5)))
+                doc_score += term_1 * term_2
+            results += [[doc_ID,doc_score]]
+        return results
+
 if __name__ == "__main__":
     with open('data/chapters-index-vbytes.bin','rb') as f:
         data = f.read()
         decompressor = IndexDecompressor(data)
         index = decompressor.toIndex()
-    
-    print("Index built")
+    print("Index Loaded")
+
+    tag_index = TagPositionalInvertedIndexLoader().loadFromCompressedFile('data/compressedPreprocessedTagIndex.bin')
+    print("Tag Index Loaded")
+
     with open('data/term-counts.bin','rb') as f:
         data = f.read()
         term_counts = pickle.loads(data)
-
     print("Term counts Loaded")
 
     with open('data/doc-terms.pickle','rb') as f:
         data = f.read()
         doc_terms = pickle.loads(data)
-
     permuterm_index_trie = create_permuterm_index_trie(doc_terms)
     print("permuterm index tree constructed")
 
     stopwords = loadStopWordsIntoSet('englishStopWords.txt')
     print("Stopwords loaded")
-    api = Search_Engine(index,permuterm_index_trie,stopwords,term_counts)
+    api = Search_Engine(index,permuterm_index_trie,tag_index,stopwords,term_counts)
     print(api.search(query_examples[9]))
