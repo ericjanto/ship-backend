@@ -44,29 +44,37 @@ class PIIClientAPI:
         """ Method that sends a json message and receives a json response """
         self.requestID = (self.requestID + 1) % 1000000 
         self.socket.send(json.dumps(message).encode())
-        
+
+    def generateRequest(self, method, terms=[], docIDs=[], pairs=[]):
+        if type(terms) is str:
+            terms = [terms]
+        if type(docIDS) is int:
+            docIDs = [docIDs]
+        if type(pairs) is tuple:
+            pairs = []
+
+        request = {
+            "clientID": self.clientID,
+            "requestID": self.requestID,
+            "method" : method,
+            "terms" : terms,
+            "docIDs" : docIDs,
+            "pairs" : pairs
+        }
+
+        self.requestID += 1
+
+        return request
+
     
     def getDistinctTermsCount(self):
-        message = { "clientID": self.clientID,
-                    "requestID": self.requestID,
-                    "method": "getDistinctTermsCount",
-                    "terms":[],
-                    "docIDs":[],
-                    "pairs": [],
-                    }
-
+        message = self.generateRequest("getDistinctTermsCount")
         self.send(message)
         
     
     # NB: not super accurate, because some languages have words which consist of ascii characters only (e.g. "amore" in Italian)
     def getEnglishTermsCount(self):
-        message = { "clientID": self.clientID,
-                    "requestID": self.requestID,
-                    "method": "getEnglishTermsCount", 
-                    "terms":[],
-                    "docIDs":[], 
-                    "pairs": [],
-                    }
+        message = self.generateRequest("getEnglishTermsCount")
         self.send(message)
 
     def getTermFrequency(self, terms, docIDs) -> int:
@@ -74,41 +82,21 @@ class PIIClientAPI:
             terms = [terms]
         if type(docIDs) == int:
             docIDs = [docIDs]
-        message = {
-                    "clientID": self.clientID,
-                    "requestID": self.requestID,
-                    "method": "getTermFrequency",
-                    "terms":[],
-                    "docIDs":[], 
-                    "pairs": list(zip(terms, docIDs))
-                    } # pairs is a list of tuples (term, docID)
+        message = self.generateRequest("getTermFrequency",
+                                       pairs=list(zip(terms, docIDs)))
         self.send(message)
 
 
     def getDocFrequency(self, terms) -> int:
         if type(terms) == str:
             terms = [terms]
-        message = {
-                    "clientID": self.clientID,
-                    "requestID": self.requestID,
-                    "method": "getDocFrequency", 
-                    "terms":terms,
-                    "docIDs":[], 
-                    "pairs": [],
-                    }
+        message = self.generateRequest("getDocFrequency", terms=terms)
         self.send(message)
         
     def getDocumentsTermOccursIn(self, terms) -> List[int]:
         if type(terms) == str:
             terms = [terms]
-        message = {
-                    "clientID": self.clientID,
-                    "requestID": self.requestID,
-                    "method": "getDocumentsTermOccursIn",
-                    "terms":terms,
-                    "docIDs":[],
-                    "pairs": [],
-                    }
+        message = self.generateRequest("getDocumentsTermOccursIn", terms=terms)
         self.send(message)
 
     def getPostingList(self, terms, docIDs) -> List[int]:
@@ -116,14 +104,8 @@ class PIIClientAPI:
             terms = [terms]
         if type(docIDs) == int:
             docIDs = [docIDs]
-        message = {
-                    "clientID": self.clientID,
-                    "requestID": self.requestID,
-                    "method": "getPostingList",
-                    "terms":[],
-                    "docIDs":[],
-                    "pairs": list(zip(terms, docIDs))
-                    }
+        message = self.generateRequest("getPostingList",
+                                       pairs=list(zip(terms, docIDs)))
         self.send(message)
 
 
@@ -132,36 +114,16 @@ class PIIClientAPI:
             terms = [terms]
         if type(docIDs) == int:
             docIDs = [docIDs]
-        message = {
-                    "clientID": self.clientID,
-                    "requestID": self.requestID,
-                    "method": "tfidf",
-                    "terms":[],
-                    "docIDs":[],
-                    "pairs": list(zip(terms, docIDs))
-                    }
+        message = self.generateRequest("tfidf",
+                                       pairs=list(zip(terms, docIDs)))
         self.send(message)
 
     def getNumDocs(self) -> int:
-        message = {
-                    "clientID": self.clientID,
-                    "requestID": self.requestID,
-                    "method": "getNumDocs",
-                    "terms":[],
-                    "docIDs":[],
-                    "pairs": [],
-                    }
+        message = self.generateRequest("getNumDocs")
         self.send(message)
         
 
     def getDocIDs(self) -> Set[int]:
-        message = {
-                    "clientID": self.clientID,
-                    "requestID": self.requestID,
-                    "method": "getDocIDs",
-                    "terms":[],
-                    "docIDs":[],
-                    "pairs": [],
-                    }
+        message = sel.generateRequest("getDocIDs")
         self.send(message)
         
