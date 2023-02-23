@@ -18,12 +18,58 @@ class BooleanSearchEngine():
     expr  => term
     '''
 
-    def __init__(self, positionalInvertedIndex, permutermIndexTrie, stopwords, debugVerbose=False):
+    def __init__(self, positionalInvertedIndex, permutermIndexTrie, metadataDictionary, stopwords, debugVerbose=False):
         self.index = positionalInvertedIndex
         self.permutermIndexTrie = permutermIndexTrie
         self.stopwords = stopwords
+        self.metadataDictionary = metadataDictionary
 
-    def makeQuery(self, query, debugVerbose=False):
+    # Making query with filters. Parameter set to -1 means that this filter is not active.
+    def makeQuery(self, query, debugVerbose=False, singleChapter = False, completionStatus = "all", language = 1, wordCountFrom = -1,
+        wordCountTo = -1, hitsCountFrom = -1, hitsCountTo = -1, kudosCountFrom = -1, kudosCountTo = -1, commentsCountFrom = -1, commentsCountTo = -1, bookmarksCountFrom = -1, bookmarksCountTo = -1, dateFrom = -1, dateTo = -1):
+        """ Makes a query with selected filters.
+        Parameters
+        ----------
+        query: String
+            The query to search for. Format: phrase (incl. inter wildcards), proximity, logical operators query
+        debugVerbose: Boolean
+            Flag indicating whether debugging output should be printed out.
+        singleChapter: Boolean 
+            Filter to filter out ONLY single-chapter stories. If set to false, both single-chapter and not single-chapter stories are returned.
+        completionStatus: String ("all"/"completed"/"in-progress")
+            Filter to filter out documents based on their completion status.
+        language: Integer
+            Filter to filter out documents based on used language. English language is 1. 
+        wordCountFrom: Integer
+            Filter to filter out documents based on their word count.
+        wordCountTo: Integer
+            Filter to filter out documents based on their word count.
+        hitsCountFrom: Integer
+            Filter to filter out documents based on the number of hits they have.
+        hitsCountTo: Integer
+            Filter to filter out documents based on the number of hits they have.
+        kudosCountFrom: Integer
+            Filter to filter out documents based on the number of kudos they have.
+        kudosCountTo: Integer
+            Filter to filter out documents based on the number of kudos they have.
+        commentsCountFrom: Integer
+            Filter to filter out documents based on the number of comments they have.
+        commentsCountTo: Integer
+            Filter to filter out documents based on the number of comments they have.
+        bookmarksCountFrom: Integer
+            Filter to filter out documents based on the number of bookmarks they have.
+        bookmarksCountTo: Integer
+            Filter to filter out documents based on the number of bookmarks they have.
+        dateFrom: Integer (date in UNIX format or -1)
+            Filter to filter out documents based on their "Last updated" date.
+        dateTo: Integer (date in UNIX format or -1)
+            Filter to filter out documents based on their "Last updated" date.
+        
+        Returns
+        ----------
+        answer: set(Integer)
+            Matching documents sorted by their ID.
+        """
         query = query.strip()
         query = query.replace("(", " ( ").replace(")", " ) ")
         query = query.replace("\"", " \" ") 
@@ -34,9 +80,10 @@ class BooleanSearchEngine():
             print("before parseQuery")
             print(query)
 
-        return self.parseQuery(query, debugVerbose=debugVerbose)
+        return self.parseQuery(query, debugVerbose=debugVerbose, singleChapter = singleChapter, completionStatus = completionStatus, language = language, wordCountFrom = wordCountFrom, wordCountTo = wordCountTo, hitsCountFrom = hitsCountFrom, hitsCountTo = hitsCountTo, kudosCountFrom = kudosCountFrom, kudosCountTo = kudosCountTo, commentsCountFrom = commentsCountFrom, commentsCountTo = commentsCountTo, bookmarksCountFrom = bookmarksCountFrom, bookmarksCountTo = bookmarksCountTo, dateFrom = dateFrom, dateTo = dateTo)
 
-    def parseQuery(self, query, debugVerbose=False):
+    # Parsing query with filters.
+    def parseQuery(self, query, debugVerbose, singleChapter, completionStatus, language, wordCountFrom, wordCountTo, hitsCountFrom, hitsCountTo, kudosCountFrom, kudosCountTo, commentsCountFrom, commentsCountTo, bookmarksCountFrom, bookmarksCountTo, dateFrom, dateTo):
 
         # Step 0: Modify brackets for proximity search to simplify
         #         Step 1
@@ -74,7 +121,6 @@ class BooleanSearchEngine():
         bracketDepth = 0
 
         newQuery = []
-        # TODO: Urgently, fix this so it will work once proximity search is working
         for pos, symbol in enumerate(query):
             if symbol == "(":
                 if bracketDepth == 0 and (pos == 0 or not self.isProximitySearchMarker(query[pos-1])):
@@ -83,7 +129,7 @@ class BooleanSearchEngine():
             elif symbol == ")":
                 if bracketDepth == 1:
                     bracketEndPos = pos
-                    newQuery.append(self.parseQuery(query[bracketStartPos:bracketEndPos]))
+                    newQuery.append(self.parseQuery(query[bracketStartPos:bracketEndPos], debugVerbose=debugVerbose, singleChapter = singleChapter, completionStatus = completionStatus, language = language, wordCountFrom = wordCountFrom, wordCountTo = wordCountTo, hitsCountFrom = hitsCountFrom, hitsCountTo = hitsCountTo, kudosCountFrom = kudosCountFrom, kudosCountTo = kudosCountTo, commentsCountFrom = commentsCountFrom, commentsCountTo = commentsCountTo, bookmarksCountFrom = bookmarksCountFrom, bookmarksCountTo = bookmarksCountTo, dateFrom = dateFrom, dateTo = dateTo))
 
                 bracketDepth -= 1
             elif bracketDepth == 0:
@@ -127,22 +173,18 @@ class BooleanSearchEngine():
 
         allPermutations = [dict(zip(position2term, v)) for v in product(*position2term.values())]
         expandedQueries = [list(d.values()) for d in allPermutations]
-        if withinProximitySearchMode and separated:
-            expandedQueries = [[q[0]] + [",".join(q[1:-1])] + [q[-1]] for q in expandedQueries]
-            separated = False 
-            withinProximitySearchMode = False
-
 
         if debugVerbose:
             print("Post stage 2:")
             print(expandedQueries)
             print()
 
-        answer = set()
-        for query in expandedQueries:
-        
-            # Step 3: Normalise terms
+        # TODO: fix proximity search 
 
+        answer = set()
+        searchScope = self.filterDocs(singleChapter = singleChapter, completionStatus = completionStatus, language = language, wordCountFrom = wordCountFrom, wordCountTo = wordCountTo, hitsCountFrom = hitsCountFrom, hitsCountTo = hitsCountTo, kudosCountFrom = kudosCountFrom, kudosCountTo = kudosCountTo, commentsCountFrom = commentsCountFrom, commentsCountTo = commentsCountTo, bookmarksCountFrom = bookmarksCountFrom, bookmarksCountTo = bookmarksCountTo, dateFrom = dateFrom, dateTo = dateTo)
+        for query in expandedQueries:        
+            # Step 3: Normalise terms
             for i in range(len(query)):
                 if self.isSymbolTerm(query[i]):
                     #TODO: Add in parameters somewhere to control whether or not 
@@ -164,7 +206,7 @@ class BooleanSearchEngine():
                     withinExactSearchMode = not withinExactSearchMode
 
                     if not withinExactSearchMode and len(exactTerms) > 0:
-                        newQuery.append(self.exactSearch(exactTerms))
+                        newQuery.append(self.exactSearch(exactTerms, searchScope))
                     exactTerms = []
                     continue
                 if withinExactSearchMode:
@@ -200,7 +242,7 @@ class BooleanSearchEngine():
                     if not withinProximitySearchMode:
                         raise RuntimeError("Malformed query, proximity search closed before it was opened")
                     withinProximitySearchMode = False
-                    newQuery.append(self.proximitySearch(proximityTerms, proximityThreshold))
+                    newQuery.append(self.proximitySearch(proximityTerms, proximityThreshold, searchScope))
                     proximityTerms = []
                     proximityThreshold = -1
                 else:
@@ -222,7 +264,7 @@ class BooleanSearchEngine():
                 print()
 
             # Convert terms into posting lists
-            query = [self.findDocumentsTermOccursIn(term) if self.isSymbolTerm(term) else term for term in query]
+            query = [self.findDocumentsTermOccursIn(term, searchScope) if self.isSymbolTerm(term) else term for term in query]
 
             # Step 6: Handle the NOT cases
             i = 0
@@ -243,7 +285,7 @@ class BooleanSearchEngine():
 
                 if not self.isSymbolPostingList(nextSymbol):
                     continue
-                newQuery.append(self.negate(nextSymbol))
+                newQuery.append(self.negate(nextSymbol, list(searchScope)))
             query = newQuery
 
             if debugVerbose:
@@ -351,9 +393,74 @@ class BooleanSearchEngine():
         if len(preprocessor.terms) == 0:
             return ""
         return preprocessor.terms[0]
+    
+    def parameterWithinBoundary(self, parameter, lowerBound, upperBound):
+        return (lowerBound == -1 or parameter >= lowerBound) and (upperBound == -1 or parameter <= upperBound)
+    
+    def filterDocs(self, singleChapter, completionStatus, language, wordCountFrom, wordCountTo, hitsCountFrom, hitsCountTo, kudosCountFrom, kudosCountTo, commentsCountFrom, commentsCountTo, bookmarksCountFrom, bookmarksCountTo, dateFrom, dateTo):
+        """ From all the documents, filters those documents that match the set filters. In the main 'for loop', checking a document terminates early if some condition is not met.
+        Parameters
+        ----------
+        see makeQuery params
+        
+        Returns
+        ----------
+        answer: list(Integer)
+            Filtered documents.
+        """
+        allStoryIDs = self.metadataDictionary.keys()
+        filteredStoryIDs = []
 
-    def findDocumentsTermOccursIn(self, term):
-        return self.index.getDocumentsTermOccursIn(term)
+        for id in allStoryIDs:
+            storyInfo = self.metadataDictionary[id]
+
+            chapterCountMatch = (not singleChapter) or (singleChapter and storyInfo.finalChapterCountKnown and storyInfo.finalChapterCount == 1) or (singleChapter and (not storyInfo.finalChapterCountKnown) and storyInfo.currentChapterCount == 1)
+            if not chapterCountMatch:
+                continue
+            completionStatusMatch = (completionStatus == "all") or (completionStatus == "completed" and storyInfo.finished) or (completionStatus == "in-progress" and not storyInfo.finished)
+            if not completionStatusMatch:
+                continue
+            languageMatch = storyInfo.language == language
+            if not languageMatch:
+                continue
+            wordCountMatch = self.parameterWithinBoundary(storyInfo.wordCount, wordCountFrom, wordCountTo)
+            if not wordCountMatch:
+                continue
+            hitsCountMatch = self.parameterWithinBoundary(storyInfo.hitCount, hitsCountFrom, hitsCountTo)
+            if not hitsCountMatch:
+                continue
+            kudosCountMatch = self.parameterWithinBoundary(storyInfo.kudosCount, kudosCountFrom, kudosCountTo)
+            if not kudosCountMatch:
+                continue
+            commentsCountMatch = self.parameterWithinBoundary(storyInfo.commentCount, commentsCountFrom, commentsCountTo)
+            if not commentsCountMatch:
+                continue
+            bookmarksCountMatch = self.parameterWithinBoundary(storyInfo.bookmarkCount, bookmarksCountFrom, bookmarksCountTo)
+            if not bookmarksCountMatch:
+                continue
+            dateMatch = self.parameterWithinBoundary(storyInfo.lastUpdated, dateFrom, dateTo)
+            if not dateMatch:
+                continue
+
+            # if we reach here, the condition should always be True
+            if chapterCountMatch and completionStatusMatch and languageMatch and wordCountMatch and hitsCountMatch and kudosCountMatch and commentsCountMatch and bookmarksCountMatch and dateMatch:
+                filteredStoryIDs.append(id)
+
+        filteredStoryIDs = set(filteredStoryIDs)
+
+        allDocs = self.index.getDocIDs()
+        filteredDocs = set()
+
+        for doc in allDocs:
+            storyID = doc / 1000
+            if storyID in filteredStoryIDs:
+                filteredDocs.add(doc)
+
+        return filteredDocs
+
+
+    def findDocumentsTermOccursIn(self, term, searchScope):
+        return [doc for doc in self.index.getDocumentsTermOccursIn(term) if doc in searchScope]
 
     def isProximitySearchMarker(self, symbol):
         return type(symbol) != list and re.match("#\d+\(?$", symbol) is not None
@@ -381,25 +488,24 @@ class BooleanSearchEngine():
     # 1) * is at the very beginning of a phrase - done
     # 2) * is between 2 words - done
     # 3) * is at the very end of a phrase - not done, is it worth it to handle this small edge case (?)
-    def exactSearch(self, orderedTerms):
+    def exactSearch(self, orderedTerms, searchScope):
         # TODO: Error handling for when no ordered terms 
         #       are provided
         orderedTerms = self.removeSubsequentStars(orderedTerms)
-        docs = []
 
         # if query consists only from *, this query is meaningless:
         if len(orderedTerms) == 1 and orderedTerms[0] == "*":
-            return docs
+            return []
 
         startIndex = 0 if orderedTerms[0] != "*" else 1 # index of first non-star term
             
-        docs = self.findDocumentsTermOccursIn(orderedTerms[startIndex])
+        docs = self.findDocumentsTermOccursIn(orderedTerms[startIndex], searchScope)
 
         # find docs for remaining words:
         for i in range(startIndex + 1, len(orderedTerms)):
             if orderedTerms[i] == "*":
                 continue 
-            docs = self.intersection(docs, self.findDocumentsTermOccursIn(orderedTerms[i])) # docs contain all common docs
+            docs = self.intersection(docs, self.findDocumentsTermOccursIn(orderedTerms[i], searchScope)) # docs contain all common docs
 
         if len(orderedTerms) == 1 or len(docs) == 0:
             return docs
@@ -440,12 +546,12 @@ class BooleanSearchEngine():
                 result.append(doc)
         return sorted(result)
 
-    def proximitySearch(self, terms, proximityThreshold, ordered=False):
+    def proximitySearch(self, terms, proximityThreshold, searchScope, ordered=False):
         # TODO: Error handling for when no ordered terms 
         #       are provided
-        docs = self.findDocumentsTermOccursIn(terms[0])
+        docs = self.findDocumentsTermOccursIn(terms[0], searchScope)
         for i in range(1, len(terms)):
-            docs = self.intersection(docs, self.findDocumentsTermOccursIn(terms[i]))
+            docs = self.intersection(docs, self.findDocumentsTermOccursIn(terms[i], searchScope))
 
         if len(terms) == 1 or len(docs) == 0:
             return docs
@@ -515,8 +621,8 @@ class BooleanSearchEngine():
 
         return False
 
-    def negate(self, docs):
-        return sorted([x for x in self.index.getDocIDs() if x not in docs])
+    def negate(self, docs, searchScope):
+        return sorted([x for x in searchScope if x not in docs])
 
     def union(self, docs1, docs2):
 
@@ -526,6 +632,7 @@ class BooleanSearchEngine():
 
         return sorted(list(unionDocs))
 
+    # NB: to use this intersection function, documents must be ordered!
     def intersection(self, docs1, docs2):
         intersection = []
         p1 = 0

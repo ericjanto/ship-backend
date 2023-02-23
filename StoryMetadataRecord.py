@@ -30,7 +30,7 @@ class StoryMetadataRecord():
         self.kudosCount = None
         self.hitCount = None
 
-        # All dates are strings in the YYYY/MM/DD format
+        # All dates are strings in the UNIX format
         self.lastUpdated = None
 
     def setFinalChapterCount(self, finalChapterCount: int) -> None:
