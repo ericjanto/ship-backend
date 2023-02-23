@@ -66,7 +66,6 @@ class PIIServerAPI:
             # We need to return something if an invalid request is
             # sent, else the client will never stop waiting for a response.
             data["invalidQueryType"] = True
-#        response = {"request_id": request_id, "client_id":client_id, "data": data}
         data["requestID"] = json_recv["requestID"]
         data["clientID"] = json_recv["clientID"]
 
