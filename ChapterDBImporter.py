@@ -145,8 +145,7 @@ if __name__ == "__main__":
                 GROUP BY docId;
     """
 
-    CREATE_TABLE_QUERY_2 = """
-    CREATE TABLE ChaptersWithStoryInfo AS
+    QUERY = """
     SELECT (chp.storyID*1000+chp.idx) AS docID,
         CASE   
             WHEN chp.idx = 0 THEN COALESCE(chp.text, '') || "." || COALESCE(sh.description, '') || "." || COALESCE(sh.title, '') || "." || COALESCE(group_concat(auth.name, ', '), '')
@@ -158,16 +157,13 @@ if __name__ == "__main__":
     LEFT JOIN Authors auth ON al.authorId = auth.id
     GROUP BY docID;
     """
-    QUERY = "SELECT docID, text FROM ChaptersWithStoryInfo;"
-    ### Create a table for the query above
-    
-    # dbIdx = DatabaseToIndex("../smallerDB.sqlite3", QUERY)
-    # dbIdx.storeUniqueTermsAndIndex()
-    # dbIdx.closeConn()
+    QUERY_FOR_WHEN_CHAPTERSWITHSTORYINFO_EXISTS = "SELECT docID, text FROM ChaptersWithStoryInfo;"
 
+    # Update the paths in the following two lines: the first is where you read the db from
+    # the second where to write the chunks to.
     dbIdx = ChapterDBImporter("smallerDB.sqlite3", QUERY)
-    dbIdx.importChaptersToIndex("./data/compressed-chapter-indexes/", 2000)
+    dbIdx.importChaptersToIndex("./data/compressed-chapter-indexes/", 25000, limit=10000000, verbose=True)
 
-    reloadedIndex = PositionalInvertedIndexLoader.loadFromMultipleCompressedFiles("./data/compressed-chapter-indexes/", verbose=True)
-    pii_single = PositionalInvertedIndexLoader.loadFromCompressedFile("./data/chapters-index-vbytes.bin")
-    print(pii_single == reloadedIndex)
+    # reloadedIndex = PositionalInvertedIndexLoader.loadFromMultipleCompressedFiles("./data/compressed-chapter-indexes/", verbose=True)
+    # pii_single = PositionalInvertedIndexLoader.loadFromCompressedFile("./data/chapters-index-vbytes.bin")
+    # print(pii_single == reloadedIndex)
