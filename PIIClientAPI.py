@@ -1,54 +1,70 @@
 import socket
 import json
+from threading import Thread, Lock
+from typing import List, Set
+import sys
 
 class PIIClientAPI:
     def __init__(self, HOST, PORT):
         """ Creates a tcp socket and connects to the server """
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.connect((HOST, PORT))
+        self.clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.clientSocket.connect((HOST, PORT))
         self.requestID = 0
         self.clientID = self.requestClientId()
         self.threadDict = {}
-        self.listen()
+        # t = Thread(target=self.listen)
+        # t.start()
+        # t.join()
 
     def requestHandler(self, function, **args):
         """
         Starts a thread for the assoicated target function,
         then puts the thread to sleep until listen recieves a response for the request
         then then the output is returned """
-        self.threadDict[self.requestID] = threading.Thread(target=function, args=args)
+        self.threadDict[self.requestID] = Thread(target=function, args=args)
         self.threadDict[self.requestID].start()
     
     def listen(self):
-        self.recvSocket.listen(5)
+        # self.socket.listen()
+        
         while True:
-            message, addr = client.recv(4096)
-            threading.Thread(target=self.recv).start()
-    
-    def recv(self):
-        response = self.socket.recv(4096) 
-        json_recv = json.loads(response)
-        return json_recv
+            try:
+                response = self.clientSocket.recv(4096).decode()
+                print(f'Accepted connection from {server_address}')
+                t = Thread(target=self.handleResponse, args=(server_socket,))
+                t.start()
+                t.join()
+            except Exception as e:
+                print(e)
+                print("Client shutting down...")
+                self.clientSocket.close()
+                break
 
-    def send(self):
+    def handleResponse(self, response):
+        if response!="":
+            response = json.loads(response)
+        print(response)
+        return response
+        # requestID = response["requestID"]
+        # self.threadDict[requestID].output = response
+        # self.threadDict[requestID].outputReceived = True
+        # self.threadDict[requestID].notify()
+
+    def send_and_recv(self, message):
         self.requestID = (self.requestID + 1) % 1000000 
-        self.socket.send(json.dumps(message).encode())
+        self.clientSocket.send(json.dumps(message).encode())
+        response = self.clientSocket.recv(4096).decode()
+        print(json.loads(response))
 
     def requestClientId(self):
         """ Method that requests a client id from the server """
         message = {"method": "requestClientId", "requestID": self.requestID}
-        self.send(message)
-        
-
-    def send_and_recv(self, message):
-        """ Method that sends a json message and receives a json response """
-        self.requestID = (self.requestID + 1) % 1000000 
-        self.socket.send(json.dumps(message).encode())
+        self.send_and_recv(message)
 
     def generateRequest(self, method, terms=[], docIDs=[], pairs=[]):
         if type(terms) is str:
             terms = [terms]
-        if type(docIDS) is int:
+        if type(docIDs) is int:
             docIDs = [docIDs]
         if type(pairs) is tuple:
             pairs = []
@@ -124,6 +140,14 @@ class PIIClientAPI:
         
 
     def getDocIDs(self) -> Set[int]:
-        message = sel.generateRequest("getDocIDs")
-        self.send(message)
+        message = self.generateRequest("getDocIDs")
+        self.send_and_recv(message)
+
+### main method to open a client requeusting the server for docIDs
+if __name__ == "__main__":
+    HOST = "localhost"
+    PORT = 5000
+    client = PIIClientAPI(HOST, PORT)
+    client.getDocIDs()
+
         
