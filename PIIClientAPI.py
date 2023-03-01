@@ -51,16 +51,11 @@ class PIIClientAPI:
     #     print(response)
     #     return response
     
-    def send(self, message):
+    def send_and_recv(self, message):
         self.requestID = (self.requestID + 1) % 1000000 
         self.clientSocket.sendall(json.dumps(message).encode())
         response = self.clientSocket.recv(4096).decode()
         print(json.loads(response))
-
-    def requestClientId(self):
-        """ Method that requests a client id from the server """
-        message = {"method": "requestClientId", "requestID": self.requestID}
-        self.send(message)
 
     def generateRequest(self, method, terms=[], docIDs=[], pairs=[]):
         if type(terms) is str:
@@ -82,17 +77,22 @@ class PIIClientAPI:
         self.requestID += 1
 
         return request
+    
+    def requestClientId(self):
+        """ Method that requests a client id from the server """
+        message = {"method": "requestClientId", "requestID": self.requestID}
+        self.send_and_recv(message)
 
     
     def getDistinctTermsCount(self):
         message = self.generateRequest("getDistinctTermsCount")
-        self.send(message)
+        self.send_and_recv(message)
         
     
     # NB: not super accurate, because some languages have words which consist of ascii characters only (e.g. "amore" in Italian)
     def getEnglishTermsCount(self):
         message = self.generateRequest("getEnglishTermsCount")
-        self.send(message)
+        self.send_and_recv(message)
 
     def getTermFrequency(self, terms, docIDs) -> int:
         if type(terms) == str:
@@ -101,20 +101,20 @@ class PIIClientAPI:
             docIDs = [docIDs]
         message = self.generateRequest("getTermFrequency",
                                        pairs=list(zip(terms, docIDs)))
-        self.send(message)
+        self.send_and_recv(message)
 
 
     def getDocFrequency(self, terms) -> int:
         if type(terms) == str:
             terms = [terms]
         message = self.generateRequest("getDocFrequency", terms=terms)
-        self.send(message)
+        self.send_and_recv(message)
         
     def getDocumentsTermOccursIn(self, terms) -> List[int]:
         if type(terms) == str:
             terms = [terms]
         message = self.generateRequest("getDocumentsTermOccursIn", terms=terms)
-        self.send(message)
+        self.send_and_recv(message)
 
     def getPostingList(self, terms, docIDs) -> List[int]:
         if type(terms) == str:
@@ -123,7 +123,7 @@ class PIIClientAPI:
             docIDs = [docIDs]
         message = self.generateRequest("getPostingList",
                                        pairs=list(zip(terms, docIDs)))
-        self.send(message)
+        self.send_and_recv(message)
 
 
     def tfidf(self, terms, docIDs) -> float:
@@ -133,20 +133,20 @@ class PIIClientAPI:
             docIDs = [docIDs]
         message = self.generateRequest("tfidf",
                                        pairs=list(zip(terms, docIDs)))
-        self.send(message)
+        self.send_and_recv(message)
 
     def getNumDocs(self) -> int:
         message = self.generateRequest("getNumDocs")
-        self.send(message)
+        self.send_and_recv(message)
         
 
     def getDocIDs(self) -> Set[int]:
         message = self.generateRequest("getDocIDs")
-        self.send(message)
+        self.send_and_recv(message)
 
     def endServerConnection(self):
         message = self.generateRequest("endServerConnection")
-        self.send(message)
+        self.send_and_recv(message)
 
 ### main method to open a client requeusting the server for docIDs
 if __name__ == "__main__":
