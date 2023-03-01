@@ -18,10 +18,13 @@ class PIIServerAPI:
         t.join()
     
     def process_request(self, client_socket):
-        message = client_socket.recv(4096)
-        response = self.process_query(message)
-        print("Sending response: " + str(response))
-        client_socket.sendall(json.dumps(response).encode())
+        while True:
+            message = client_socket.recv(4096).decode()
+            response = self.process_query(message)
+            print("Sending response: " + str(response))
+            client_socket.sendall(json.dumps(response).encode())
+            if "endServerConnection" in response and response["endServerConnection"] == True: break
+        print("Closing connection")
         client_socket.close()
 
     def process_query(self, message):
@@ -64,6 +67,12 @@ class PIIServerAPI:
             pairs = json_recv["pairs"]
             for (term, docID) in pairs:
                 data[(term, docID)] = self.index.getPostingList(term, docID)
+
+        elif method == "getDocIDs":
+            data["docIDs"] = self.index.getDocIDs()
+
+        elif method == "endServerConnection":
+            data["endServerConnection"] = True
 
         else:
             print("Error: invalid method")
@@ -109,7 +118,7 @@ if __name__ == "__main__":
     print(indexFile)
 
     index = PositionalInvertedIndexLoader.loadFromCompressedFile(indexFile)
-
+    print("Index loaded")
     server = PIIServerAPI(index, ip, port)
 
     print("Server running on {}:{}".format(ip, port))
