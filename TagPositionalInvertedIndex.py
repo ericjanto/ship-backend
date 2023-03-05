@@ -1,6 +1,9 @@
+from typing import List
+
 import bisect
 
-class TagPositionalInvertedIndex():
+
+class TagPositionalInvertedIndex:
     """
     Structure:
     HashMap<String Tag, List<StoryIDs>>
@@ -25,12 +28,12 @@ class TagPositionalInvertedIndex():
         bisect.insort(self.tags[tag], storyID)
         return
 
-    def getStoryIDsWithTag(self, tag):
+    def getStoryIDsWithTag(self, tag: str) -> List[int]:
         if tag not in self.tags:
             return []
         return self.tags[tag]
 
-    def getTagFrequency(self, tag):
+    def getTagFrequency(self, tag: str) -> int:
         if tag not in self.tags:
             return 0
         return len(self.tags[tag])
@@ -42,7 +45,7 @@ class TagPositionalInvertedIndex():
                 self.insertTagInstance(tag, docID)
 
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if not isinstance(other, TagPositionalInvertedIndex):
             return False
 
