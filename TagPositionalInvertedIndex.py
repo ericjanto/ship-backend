@@ -40,6 +40,13 @@ class TagPositionalInvertedIndex():
         return
 
 
+    def mergeWithOtherIndex(self, otherTagPositionalInvertedIndex) -> None:
+        """Merges the contents of another index into this one"""
+        for tag in otherTagPositionalInvertedIndex.tags:
+            for docID in otherTagPositionalInvertedIndex.tags[tag]:
+                self.insertStoryIDIntoOrderedPostingList(tag, docID)
+
+
     def __eq__(self, other):
         if not isinstance(other, TagPositionalInvertedIndex):
             return False
