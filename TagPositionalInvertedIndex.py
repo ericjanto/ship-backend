@@ -13,12 +13,17 @@ class TagPositionalInvertedIndex():
 
         self.storyCount = 0
 
-    def insertTagInstance(self, tag, storyID):
+    def insertTagInstance(self, tag: str, storyID: int) -> None:
         if storyID not in self.storyIDs:
             self.storyIDs.add(storyID)
             self.storyCount += 1
 
-        self.insertStoryIDIntoOrderedPostingList(tag, storyID)
+        if tag not in self.tags:
+            self.tags[tag] = [storyID]
+            return
+
+        bisect.insort(self.tags[tag], storyID)
+        return
 
     def getStoryIDsWithTag(self, tag):
         if tag not in self.tags:
@@ -30,21 +35,11 @@ class TagPositionalInvertedIndex():
             return 0
         return len(self.tags[tag])
 
-
-    def insertStoryIDIntoOrderedPostingList(self, tag, storyID):
-        if tag not in self.tags:
-            self.tags[tag] = [storyID]
-            return
-
-        bisect.insort(self.tags[tag], storyID)
-        return
-
-
     def mergeWithOtherIndex(self, otherTagPositionalInvertedIndex) -> None:
         """Merges the contents of another index into this one"""
         for tag in otherTagPositionalInvertedIndex.tags:
             for docID in otherTagPositionalInvertedIndex.tags[tag]:
-                self.insertStoryIDIntoOrderedPostingList(tag, docID)
+                self.insertTagInstance(tag, docID)
 
 
     def __eq__(self, other):
