@@ -53,7 +53,7 @@ class PositionalInvertedIndex():
             # due to how we split the index on importing, but it is
             # worth looking at
             for pos in positions:
-                self.terms.insertTermInstance(term, docID, pos)
+                self.insertTermInstance(term, docID, pos)
 
     def getDistinctTermsCount(self):
         return len(self.terms.keys())
