@@ -1,12 +1,7 @@
 import requests
 import json
 # Perform a GET request
-response = requests.get('http://localhost:5000/')
-print(response.text)
-
-# Perform a POST request with JSON data
-data = {'name': 'John', 'age': 25}
-response = requests.post('http://localhost:5000/', json=data)
+response = requests.get('http://localhost:5000/test')
 print(response.text)
 
 ### Convert above to a class and add more methods
@@ -67,5 +62,5 @@ if __name__ == '__main__':
     print(client.getPostingList([('the', 1), ('the', 2)]))
     print(client.tfidf([('the', 1), ('the', 2)]))
     print(client.getNumDocs())
-    # print(client.getDocIDs())
+    print(client.getDocIDs())
    

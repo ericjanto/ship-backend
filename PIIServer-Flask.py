@@ -83,7 +83,7 @@ class PIIServerFlask:
         return json.dumps(list_of_docIDs).encode('utf-8')
 
     def run(self):
-        self.app.run(host=self.ip, port=self.port)
+        self.app.run(host=self.ip, port=self.port, threaded=True)
 
 if __name__ == '__main__':
     if len(sys.argv) != 4:
