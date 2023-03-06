@@ -72,14 +72,18 @@ class IndexDecompressor():
 
             lastStoryID = 0
 
-            for _ in range(storyIDCount):
+            storyIDs = [0] * storyIDCount
+
+            for i in range(storyIDCount):
                 delta = self.readNextIntFromByteStream()
 
                 storyID = delta + lastStoryID
 
-                self.index.insertTagInstance(tag, storyID)
+                storyIDs[i] = storyID
 
                 lastStoryID = storyID
+
+            self.index.insertStoryIDs(tag, storyIDs)
 
         return self.index
 

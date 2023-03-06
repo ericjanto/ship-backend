@@ -12,8 +12,9 @@ class TagPositionalInvertedIndex:
     def __init__(self):
         self.tags = dict()
 
+        # TODO: Don't believe there is any reason
+        #  for these fields to exist
         self.storyIDs = set()
-
         self.storyCount = 0
 
     def insertTagInstance(self, tag: str, storyID: int) -> None:
@@ -27,6 +28,14 @@ class TagPositionalInvertedIndex:
 
         bisect.insort(self.tags[tag], storyID)
         return
+
+    def insertStoryIDs(self, tag: str, storyIDs: List[int]) -> None:
+        """Insert a list of storyIDs that feature the specified tag"""
+        if tag not in self.tags:
+            self.tags[tag] = storyIDs
+        else:
+            for storyId in storyIDs:
+                self.insertTagInstance(tag, storyId)
 
     def getStoryIDsWithTag(self, tag: str) -> List[int]:
         if tag not in self.tags:
