@@ -64,9 +64,7 @@ class IndexDecompressor():
         numTags = self.readNextIntFromByteStream()
 
         for _ in range(numTags):
-            tagLength = self.readNextIntFromByteStream()
-
-            tag = self.readNCharsFromByteStream(tagLength)
+            tag = self.readNextStrFromByteStream()
 
             storyIDCount = self.readNextIntFromByteStream()
 
