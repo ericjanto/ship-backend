@@ -23,7 +23,8 @@ class PIIServerAPI:
             response = self.process_query(message)
             print("Sending response: " + str(response))
             client_socket.sendall(json.dumps(response).encode())
-            if "endServerConnection" in response and response["endServerConnection"] == True: break
+            if "response" in response and "endServerConnection" in response["response"] and response["response"]["endServerConnection"] == True: 
+                break
         print("Closing connection")
         client_socket.close()
 
@@ -38,47 +39,56 @@ class PIIServerAPI:
         data = {}
 
         if method == "requestClientId":
-            data["clientId"] = self.clientId
+            data["clientID"] = self.clientId
+            data["requestID"] = json_recv["requestID"]
             self.clientId += 1
             return data
-
-        elif method == "getDistinctTermsCount":
-            data["distinctTermCount"] = self.index.getDistinctTermsCount()
+        
+        data["response"] = {}
+        if method == "getDistinctTermsCount":
+            data["response"]["distinctTermCount"] = self.index.getDistinctTermsCount()
 
         elif method == "getEnglishTermsCount":
-            data["englishTermCount"] = self.index.getEnglishTermsCount()
+            data["response"]["englishTermCount"] = self.index.getEnglishTermsCount()
 
         elif method == "getTermFrequency":
             pairs = json_recv["pairs"]
             for term, docID in pairs:
-                data[(term, docID)] = self.index.getTermFrequency(term, docID)
+                if term not in data["response"]:
+                    data["response"][term] = dict()
+                data["response"][term][docID] = self.index.getTermFrequency(term, docID)
 
         elif method == "getDocFrequency":
             terms = json_recv["terms"]
             for term in terms:
-                data[term] = self.index.getDocFrequency(term)
+                data["response"][term] = self.index.getDocFrequency(term)
 
         elif method == "getDocumentsTermOccursIn":
             terms = json_recv["terms"]
             for term in terms:
-                data[term] = self.index.getDocumentsTermOccursIn(term)
+                data["response"][term] = self.index.getDocumentsTermOccursIn(term)
 
         elif method == "getPostingList":
             pairs = json_recv["pairs"]
             for (term, docID) in pairs:
-                data[(term, docID)] = self.index.getPostingList(term, docID)
+                if term not in data["response"]:
+                    data["response"][term] = dict()
+                data["response"][term][docID] = self.index.getPostingList(term, docID)
+        
+        elif method == "getNumDocs":
+            data["response"]["numDocs"] = self.index.getNumDocs()
 
         elif method == "getDocIDs":
-            data["docIDs"] = self.index.getDocIDs()
+            data["response"]["docIDs"] = self.index.getDocIDs()
 
         elif method == "endServerConnection":
-            data["endServerConnection"] = True
-
+            data["response"]["endServerConnection"] = True
+        
         else:
             print("Error: invalid method")
             # We need to return something if an invalid request is
             # sent, else the client will never stop waiting for a response.
-            data["invalidQueryType"] = True
+            data["response"]["invalidQueryType"] = True
         data["requestID"] = json_recv["requestID"]
         data["clientID"] = json_recv["clientID"]
 
