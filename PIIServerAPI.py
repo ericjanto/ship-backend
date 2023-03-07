@@ -34,6 +34,7 @@ class PIIServerAPI:
         runs the requested operation against the index, and wraps
         the result in another JSON object.
         """
+        print("Recieved message", message)
         json_recv = json.loads(message)
         method = json_recv["method"]
         data = {}

@@ -54,13 +54,14 @@ class PIIClientFlask:
 
 if __name__ == '__main__':
     client = PIIClientFlask('localhost', 5000)
-    print(client.getDistinctTermsCount())
-    print(client.getEnglishTermsCount())
-    print(client.getTermFrequency([('the', 1), ('the', 2)]))
-    print(client.getDocFrequency('the'))
-    print(client.getDocumentsTermOccursIn('the'))
-    print(client.getPostingList([('the', 1), ('the', 2)]))
-    print(client.tfidf([('the', 1), ('the', 2)]))
-    print(client.getNumDocs())
-    print(client.getDocIDs())
+    client2 = PIIClientFlask('localhost', 5000)
+    print("1.", client.getDistinctTermsCount())
+    print("2.", client2.getEnglishTermsCount())
+    print("3.",client.getTermFrequency([('the', 1), ('the', 2)]))
+    print("4.",client2.getDocFrequency('the'))
+    print("5.",client.getDocumentsTermOccursIn('the'))
+    print("6.",client2.getPostingList([('the', 1), ('the', 2)]))
+    print("7.",client.tfidf([('the', 1), ('the', 2)]))
+    print("8.",client2.getNumDocs())
+    print("9.",client.getDocIDs())
    
