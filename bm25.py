@@ -47,7 +47,7 @@ class BM25_Model():
         self.index = positionalInvertedIndex
         self.stopwords = stopwords
         self.term_counts = term_counts
-        total_term_counts = sum([term_counts[docID]['tok_bfr_stemming'] for docID in term_counts])
+        total_term_counts = sum([term_counts[docID][1] for docID in term_counts])
         self.avg_doc_len = total_term_counts/len(term_counts.keys())
 
     def preprocess_query(self,query,removeStopWords=True,stem=True):
@@ -103,7 +103,7 @@ class BM25_Model():
             for term in query:
                 tf = self.index.getTermFrequency(term,doc_no)
                 df = self.index.getDocFrequency(term)
-                L_d = self.term_counts[doc_no]['tok_bfr_stemming']
+                L_d = self.term_counts[doc_no][1]
                 avg_L = self.avg_doc_len
                 N = self.index.getNumDocs()
                 C_td = (tf/(1-b + b*(L_d/avg_L))) + 0.5
