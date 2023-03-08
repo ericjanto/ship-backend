@@ -66,6 +66,10 @@ class IndexDecompressor():
         for _ in range(numTags):
             tag = self.readNextStrFromByteStream()
 
+            # TODO: This is a hacky fix, but it saves
+            # regenerating the index
+            tag = tag.lower()
+
             storyIDCount = self.readNextIntFromByteStream()
 
             lastStoryID = 0
