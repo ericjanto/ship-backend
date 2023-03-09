@@ -9,8 +9,8 @@ class PermutermIndexExporter:
         pass
     
     @staticmethod
-    def buildIndex():
-        terms = pd.read_pickle("./data/doc-terms.pickle")
+    def buildIndex(doc_terms_path):
+        terms = pd.read_pickle(doc_terms_path)
         return WildcardSearch.create_permuterm_index_trie(terms)
 
     @staticmethod
@@ -21,5 +21,5 @@ class PermutermIndexExporter:
 
 if __name__=='__main__':
     exporter = PermutermIndexExporter()
-    permutermIndex = exporter.buildIndex()
+    permutermIndex = exporter.buildIndex("./data/doc-terms.pickle")
     exporter.saveToFile("data/permuterm-index.bz2", permutermIndex)
