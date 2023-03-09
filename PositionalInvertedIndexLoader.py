@@ -48,7 +48,10 @@ class PositionalInvertedIndexLoader():
 
 
     @staticmethod
-    def loadFromMultipleCompressedFiles(pathToFiles: str, verbose: bool = False) -> PositionalInvertedIndex:
+    def loadFromMultipleCompressedFiles(pathToFiles: str, chunk_limit: int =-1, verbose: bool = False) -> PositionalInvertedIndex:
+        # Setting chunk limit to -1 means that the full index will be loaded
+        # Otherwise, that many files will be loaded into the index
+
         # Assumes that every file in the specified directory is a compressed index
         if not os.path.exists(pathToFiles):
             raise FileNotFoundError(f"{pathToFiles} does not exist")
@@ -56,6 +59,9 @@ class PositionalInvertedIndexLoader():
         index = PositionalInvertedIndex()
 
         indexFiles = [f for f in os.listdir(pathToFiles) if os.path.isfile(os.path.join(pathToFiles, f))]
+
+        if chunk_limit >= 0:
+            indexFiles = indexFiles[:chunk_limit]
 
         indexFiles.sort()
 
