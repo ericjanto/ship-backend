@@ -9,7 +9,7 @@ class trieNode:
     def add_term(self, dollar_term, full_term):
         for index, ch in enumerate(dollar_term):
             # if char is not in the trie, add it:
-            if not ch in self.next:
+            if ch not in self.next:
                 self.next[ch] = trieNode()
             
             self = self.next[ch] # move pointer
