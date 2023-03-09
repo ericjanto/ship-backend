@@ -161,8 +161,10 @@ if __name__ == "__main__":
 
     # Update the paths in the following two lines: the first is where you read the db from
     # the second where to write the chunks to.
-    dbIdx = ChapterDBImporter("smallerDB.sqlite3", QUERY)
-    dbIdx.importChaptersToIndex("./data/compressed-chapter-indexes/", 25000, limit=10000000, verbose=True)
+    # dbIdx = ChapterDBImporter("smallerDB.sqlite3", QUERY)
+    # dbIdx.importChaptersToIndex("./data/compressed-chapter-indexes/", 25000, limit=10000000, verbose=True)
+
+    index = PositionalInvertedIndexLoader.loadFromMultipleCompressedFiles("./data/compressed-chapter-indexes/", chunk_limit=50, verbose=True)
 
     # reloadedIndex = PositionalInvertedIndexLoader.loadFromMultipleCompressedFiles("./data/compressed-chapter-indexes/", verbose=True)
 
