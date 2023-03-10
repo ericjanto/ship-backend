@@ -4,6 +4,7 @@ from bm25 import BM25_Model
 from indexDecompressor import IndexDecompressor
 from WildcardSearch import create_permuterm_index_trie
 from TagPositionalInvertedIndexLoader import TagPositionalInvertedIndexLoader
+from StoryMetadataLoader import StoryMetadataLoader
 from QueryCache import QueryCache
 import pickle
 import numpy as np
@@ -28,7 +29,8 @@ query_examples = ["Who what who were AND (what OR (where AND are you))",
                   "Mon*",
                   "Mon*",
                   "Mon*",
-                  "TAG{anime} AND TAG{manga} deku vs todoroki"]
+                  "TAG{anime} OR TAG{manga} deku vs todoroki",
+                  "TAG{anime} TAG{manga}"]
 
 CONNECTIVES = ['AND','OR','and','or']
 
@@ -51,8 +53,9 @@ class Search_Engine():
         self.queryCache = QueryCache(cache_size)
         self.boolean_engine = BooleanSearchEngine(self.index,self.permutermIndexTrie,self.metadataDict,self.stopwords)
         self.ranker = BM25_Model(self.index,self.stopwords,self.termcounts)
-        total_term_counts = sum([term_counts[docID][1] for docID in term_counts])
-        self.avg_doc_len = total_term_counts/len(term_counts.keys())
+        all_docIDs = self.index.getDocIDs()
+        total_term_counts = sum(self.termcounts.get_tokens_before_stemming(all_docIDs))
+        self.avg_doc_len = total_term_counts/len(all_docIDs)
         self.tag_regex = re.compile(r'TAG{\w+}')
     
     def search(self,query,**kwargs):
@@ -60,7 +63,6 @@ class Search_Engine():
         query_filters = filter_dict
         for key in kwargs:
             query_filters[key] = kwargs[key]
-
 
         if self.queryCache.exists(query):
             return self.queryCache.get(query)
@@ -86,7 +88,7 @@ class Search_Engine():
             terms = self.ranker.preprocess_query(query)
             tag_docIDs = set() #self.tag_search(terms)
             all_doc_IDs = doc_IDs.union(tag_docIDs)
-            all_doc_IDs = self.apply_filters(all_doc_IDs)
+            all_doc_IDs = self.apply_filters(all_doc_IDs,query_filters)
             doc_score_pairs = dict.fromkeys(all_doc_IDs,0)
             
             query_scores = self.ranker.score_documents(terms,doc_IDs)
@@ -109,18 +111,29 @@ class Search_Engine():
             token_2 = self.recur_connectives(split_query[-1])
             return token_1.union(token_2)
         else:
-            tags = self.tag_regex.findall(split_query[0])
-            if len(tags) > 0:
-                split_query[0] = self.tag_regex.sub('',split_query[0])
-                tag_terms = [re.sub('['+ re.escape('{}') +']','',re.findall(r'{\w+}',tag)[0]) for tag in tags]
-                tag_results = self.tag_search(tag_terms)
-            quotes,or_str = self.quote_split(split_query[0])
-            if quotes:
-                query_str = ' OR '.join([f"\"{' '.join(quote)}\"" for quote in quotes])
+            tags = []
+            tag_latch = False
+            tag = []
+            for token in split_query[0]:
+                if '}' == token:
+                    tag_latch = False
+                    tags.append(' '.join(tag))
+                    tag = []
+                if tag_latch:
+                    tag.append(token)
+                if 'TAG{' == token:
+                    tag_latch = True
+            tag_results = None
+            if tags:
+                tag_results = self.tag_search(tags)
             else:
-                query_str = ' OR '.join(or_str)
-            results = set(self.boolean_engine.makeQuery(query_str))
-            return tag_results.intersection(results)
+                quotes,or_str = self.quote_split(split_query[0])
+                if quotes:
+                    query_str = ' OR '.join([f"\"{' '.join(quote)}\"" for quote in quotes])
+                else:
+                    query_str = ' OR '.join(or_str)
+                results = set(self.boolean_engine.makeQuery(query_str))
+            return tag_results if tag_results else results
     
     def apply_filters(self, docIDs, filter_params):
         range_fields = ['wordCount','hitCount','kudosCount',
@@ -128,7 +141,9 @@ class Search_Engine():
         filtered_storyIDs = []
 
         for id in docIDs:
-            storyInfo = self.metadataDict[id]
+            storyInfo = self.metadataDict.get(id)
+            if not storyInfo:
+                continue
             isSingle = filter_params['singleChapter']
             status = filter_params['completionStatus']
             language = filter_params['language']
@@ -205,7 +220,7 @@ class Search_Engine():
         return quotes,or_str
 
     def tag_search(self, tags):
-        docIDs = set()
+        docIDs = set(self.tagIndex.getStoryIDsWithTag(tags.pop()))
         for tag in tags:
             docIDs = docIDs.intersection(set(self.tagIndex.getStoryIDsWithTag(tag)))
         return docIDs
@@ -240,7 +255,7 @@ if __name__ == "__main__":
         index = decompressor.toIndex()
     print("Index Loaded")
 
-    tag_index = TagPositionalInvertedIndexLoader().loadFromCompressedFile('data/compressedPreprocessedTagIndex.bin')
+    tag_index = TagPositionalInvertedIndexLoader().loadFromCompressedFile('data/compressedTagIndex.bin')
     print("Tag Index Loaded")
 
     with open('data/termCounts.bin','rb') as f:
@@ -254,8 +269,11 @@ if __name__ == "__main__":
     permuterm_index_trie = create_permuterm_index_trie(doc_terms)
     print("permuterm index tree constructed")
 
+    metadata_dict = StoryMetadataLoader().loadFromCompressedFile('data/compressedMetadata.bin')
+    print("Metadata Dict Loaded")
+
     stopwords = loadStopWordsIntoSet('englishStopWords.txt')
     print("Stopwords loaded")
-    api = Search_Engine(index,permuterm_index_trie,tag_index,stopwords,term_counts)
-    for query in query_examples[19:]:
-        print(api.search(query)[:5])
+    api = Search_Engine(index,permuterm_index_trie,tag_index,metadata_dict,stopwords,term_counts)
+
+    print(api.search(query_examples[20])[:5])
