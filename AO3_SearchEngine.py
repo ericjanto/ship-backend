@@ -53,8 +53,9 @@ class Search_Engine():
         self.queryCache = QueryCache(cache_size)
         self.boolean_engine = BooleanSearchEngine(self.index,self.permutermIndexTrie,self.metadataDict,self.stopwords)
         self.ranker = BM25_Model(self.index,self.stopwords,self.termcounts)
-        total_term_counts = sum([term_counts[docID][1] for docID in term_counts])
-        self.avg_doc_len = total_term_counts/len(term_counts.keys())
+        all_docIDs = self.index.getDocIDs()
+        total_term_counts = sum(self.termcounts.get_tokens_before_stemming(all_docIDs))
+        self.avg_doc_len = total_term_counts/len(all_docIDs)
         self.tag_regex = re.compile(r'TAG{\w+}')
     
     def search(self,query,**kwargs):
@@ -140,7 +141,9 @@ class Search_Engine():
         filtered_storyIDs = []
 
         for id in docIDs:
-            storyInfo = self.metadataDict[id]
+            storyInfo = self.metadataDict.get(id)
+            if not storyInfo:
+                continue
             isSingle = filter_params['singleChapter']
             status = filter_params['completionStatus']
             language = filter_params['language']
