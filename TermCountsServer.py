@@ -17,29 +17,59 @@ async def startup_event():
     
     print("Index loaded")
 
-@app.get("/getTokensBeforeProcessing/{docID}")
-async def getTokensBeforeProcessing(docID: int):
-    return JSONResponse(content=index.get_tokens_before_processing(docID), status_code=200)
+@app.post("/getTokensBeforeProcessing")
+async def getTokensBeforeProcessing(request: Request):
+    docIDs = await request.body()
+    docIDs = json.loads(docIDs)["docIDs"]
+    response = {}
+    for docID in docIDs:
+        response[docID] = index.get_tokens_before_processing(docID)
+    return JSONResponse(content=response, status_code=200)
 
-@app.get("/getTokensBeforeStemming/{docID}")
-async def getTokensBeforeStemming(docID: int):
-    return JSONResponse(content=index.get_tokens_before_stemming(docID), status_code=200)
+@app.post("/getTokensBeforeStemming")
+async def getTokensBeforeStemming(request: Request):
+    docIDs = await request.body()
+    docIDs = json.loads(docIDs)["docIDs"]
+    response = {}
+    for docID in docIDs:
+        response[docID] = index.get_tokens_before_stemming(docID)
+    return JSONResponse(content=response, status_code=200)
 
-@app.get("/getUniqueTokensBeforeProcessing/{docID}")
-async def getUniqueTokensBeforeProcessing(docID: int):
-    return JSONResponse(content=index.get_unique_tokens_before_processing(docID), status_code=200)
+@app.post("/getUniqueTokensBeforeProcessing")
+async def getUniqueTokensBeforeProcessing(request: Request):
+    docIDs = await request.body()
+    docIDs = json.loads(docIDs)["docIDs"]
+    response = {}
+    for docID in docIDs:
+        response[docID] = index.get_unique_tokens_before_processing(docID)
+    return JSONResponse(content=response, status_code=200)
 
-@app.get("/getUniqueTokensBeforeStemming/{docID}")
-async def getUniqueTokensBeforeStemming(docID: int):
-    return JSONResponse(content=index.get_unique_tokens_before_stemming(docID), status_code=200)
+@app.post("/getUniqueTokensBeforeStemming")
+async def getUniqueTokensBeforeStemming(request: Request):
+    docIDs = await request.body()
+    docIDs = json.loads(docIDs)["docIDs"]
+    response = {}
+    for docID in docIDs:
+        response[docID] = index.get_unique_tokens_before_stemming(docID)
+    return JSONResponse(content=response, status_code=200)
 
-@app.get("/getTokensAfterStemming/{docID}")
-async def getTokensAfterStemming(docID: int):
-    return JSONResponse(content=index.get_tokens_after_stemming(docID), status_code=200)
+@app.post("/getTokensAfterStemming")
+async def getTokensAfterStemming(request: Request):
+    docIDs = await request.body()
+    docIDs = json.loads(docIDs)["docIDs"]
+    response = {}
+    for docID in docIDs:
+        response[docID] = index.get_tokens_after_stemming(docID)
+    return JSONResponse(content=response, status_code=200)
 
-@app.get("/getAllTermCounts/{docID}")
-async def getAllTermCounts(docID: int):
-    return JSONResponse(content=index.get_all_term_counts(docID), status_code=200)
+@app.post("/getAllTermCounts")
+async def getAllTermCounts(request: Request):
+    docIDs = await request.body()
+    docIDs = json.loads(docIDs)["docIDs"]
+    response = {}
+    for docID in docIDs:
+        response[docID] = index.get_all_term_counts(docID)
+    return JSONResponse(content=response, status_code=200)
 
 if __name__ == "__main__":
     global indexFile
