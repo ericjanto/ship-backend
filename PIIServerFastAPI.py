@@ -93,7 +93,7 @@ async def getDocIDs(request: Request):
 if __name__ == '__main__':
     global indexFile
     if len(sys.argv) != 4:
-        print("Usage: python3 PIIServer-FastAPI.py <ip> <port> <index file>")
+        print("Usage: python3 PIIServerFastAPI.py <ip> <port> <index file>")
         sys.exit(1)
 
     ip = sys.argv[1]

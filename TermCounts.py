@@ -24,12 +24,13 @@ class TermCounts():
             unique_tokens_before_processing = len(set(tokens_before_processing))
             unique_tokens_before_stemming = len(set(tokens_before_stemming))
             
-            self.termCounts[docId] = {"tok_befr_processing": tokens_before_processing_count,
-                                        "tok_bfr_stemming": tokens_before_stemming_count,
-                                        "u_tok_bfr_processing": unique_tokens_before_processing,
-                                        "u_tok_bfr_stemming": unique_tokens_before_stemming,
-                                        "tok_aft_stemming": tokens_after_stemming
-                                        }
+            self.termCounts[docId]  = [ 
+                                    tokens_before_processing_count, 
+                                    tokens_before_stemming_count, 
+                                    unique_tokens_before_processing, 
+                                    unique_tokens_before_stemming,
+                                    tokens_after_stemming_count
+                                    ]
 
     def countTermsRowWise(self, row, docId):
         """
