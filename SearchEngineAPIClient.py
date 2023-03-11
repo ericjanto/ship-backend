@@ -13,9 +13,9 @@ class SearchEngineAPIClient:
         data = {'query': query,
                 'tags': tags,
                 'filter_params': filter_params}
-        response = requests.get(f'http://{self.ip}:{self.port}/query',json=data)
+        response = requests.post(f'http://{self.ip}:{self.port}/query',json=data)
         return response.json()
     
 if __name__ == '__main__':
-    client = SearchEngineAPIClient('localhost',4999)
+    client = SearchEngineAPIClient('localhost',5000)
     print(client.query("",['anime','manga']))

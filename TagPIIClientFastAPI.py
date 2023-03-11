@@ -2,7 +2,7 @@ import requests
 import json
 
 # Perform a GET request
-response = requests.get('http://localhost:5000/test')
+response = requests.get('http://localhost:5002/test')
 print(response.text)
 
 class TagPIIClientFastAPI:
@@ -21,6 +21,7 @@ class TagPIIClientFastAPI:
         return response.json()
 
 if __name__ == '__main__':
-    client = TagPIIClientFastAPI('localhost', 5000)
-    print(client.getStoryIDsWithTag(['anime', 'manga']))
+    client = TagPIIClientFastAPI('localhost', 5002)
+    tag_results = client.getStoryIDsWithTag(['anime', 'manga'])
+    print(set(tag_results['anime']).intersection(set(tag_results['manga'])))
     print(client.getTagFrequency(['marvel', 'magic']))

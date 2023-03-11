@@ -1,7 +1,7 @@
 import requests
 import json
 # Perform a GET request
-response = requests.get('http://localhost:5000/test')
+response = requests.get('http://localhost:5001/test')
 print(response.text)
 
 ### Convert above to a class and add more methods
@@ -50,11 +50,11 @@ class PIIClientFlask:
 
     def getDocIDs(self):
         response = requests.get(f'http://{self.ip}:{self.port}/getDocIDs')
-        return set(response.json())
+        return response.json()
 
 if __name__ == '__main__':
-    client = PIIClientFlask('localhost', 5000)
-    client2 = PIIClientFlask('localhost', 5000)
+    client = PIIClientFlask('localhost', 5001)
+    client2 = PIIClientFlask('localhost', 5001)
     print("1.", client.getDistinctTermsCount())
     print("2.", client2.getEnglishTermsCount())
     print("3.",client.getTermFrequency([('the', 1), ('the', 2)]))

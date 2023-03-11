@@ -54,7 +54,7 @@ class Search_Engine():
         self.boolean_engine = BooleanSearchEngine(self.index,self.permutermIndexTrie,self.metadataDict,self.stopwords)
         self.ranker = BM25_Model(self.index,self.stopwords,self.termcounts)
         all_docIDs = self.index.getDocIDs()
-        total_term_counts = sum(self.termcounts.get_tokens_before_stemming(all_docIDs))
+        total_term_counts = sum(self.termcounts.get_tokens_before_stemming(all_docIDs).values())
         self.avg_doc_len = total_term_counts/len(all_docIDs)
         self.tag_regex = re.compile(r'TAG{\w+}')
     
@@ -90,8 +90,7 @@ class Search_Engine():
             all_doc_IDs = doc_IDs.union(tag_docIDs)
             all_doc_IDs = self.apply_filters(all_doc_IDs,query_filters)
             doc_score_pairs = dict.fromkeys(all_doc_IDs,0)
-            
-            query_scores = self.ranker.score_documents(terms,doc_IDs)
+            query_scores = self.ranker.score_documents(terms,all_doc_IDs)
             
             for docID,score in query_scores:
                 doc_score_pairs[docID] += score
@@ -139,27 +138,42 @@ class Search_Engine():
         range_fields = ['wordCount','hitCount','kudosCount',
                         'commentCount','bookmarkCount','lastUpdated']
         filtered_storyIDs = []
+        storyIDs = [docID//1000 for docID in list(docIDs)]
+        story_descs = self.metadataDict.getStoryDescriptors(storyIDs)
+        story_stats = self.metadataDict.getStats(storyIDs)
+        story_language = self.metadataDict.getLanguage(storyIDs)
 
-        for id in docIDs:
-            storyInfo = self.metadataDict.get(id)
-            if not storyInfo:
+        for docID,storyID in zip(docIDs,storyIDs):
+            if (not story_descs.get(str(storyID))) or (not story_stats.get(str(storyID))) or (not story_language.get(str(storyID))):
                 continue
             isSingle = filter_params['singleChapter']
             status = filter_params['completionStatus']
             language = filter_params['language']
 
-            chapterCountMatch = (not isSingle) or (isSingle and storyInfo.finalChapterCountKnown and storyInfo.finalChapterCount == 1) or (isSingle and (not storyInfo.finalChapterCountKnown) and storyInfo.currentChapterCount == 1)
+            chapterCountMatch = (
+                                not isSingle
+                                ) or (
+                                isSingle and story_descs[str(storyID)]['finalChapterCountKnown'] and story_descs[str(storyID)]['finalChapterCount'] == 1
+                                ) or (
+                                isSingle and (not story_descs[str(storyID)]['finalChapterCountKnown']) and story_descs[str(storyID)]['currentChapterCount'] == 1
+                                )
             if not chapterCountMatch:
                 continue
-            completionStatusMatch = (status == "all") or (status == "completed" and storyInfo.finished) or (status == "in-progress" and not storyInfo.finished)
+            completionStatusMatch = (
+                                    status == "all"
+                                    ) or (
+                                    status == "completed" and story_descs[str(storyID)]['finished']
+                                    ) or (
+                                    status == "in-progress" and not story_descs[str(storyID)]['finished']
+                                    )
             if not completionStatusMatch:
                 continue
-            languageMatch = storyInfo.language == language
+            languageMatch = story_language[str(storyID)] == language
             if not languageMatch:
                 continue
 
             for field in range_fields:
-                param = getattr(storyInfo,field)
+                param = story_stats[str(storyID)]
                 lowerBound = filter_params[field+'From']
                 upperBound = filter_params[field+'To']
                 flag = self.parameterWithinBoundary(param,lowerBound,upperBound)
@@ -168,7 +182,7 @@ class Search_Engine():
             if not flag:
                 continue
 
-            filtered_storyIDs.append(id)
+            filtered_storyIDs.append(docID)
             
         return filtered_storyIDs
 
@@ -220,9 +234,11 @@ class Search_Engine():
         return quotes,or_str
 
     def tag_search(self, tags):
-        docIDs = set(self.tagIndex.getStoryIDsWithTag(tags.pop()))
+        tag_search_results = self.tagIndex.getStoryIDsWithTag(tags)
+
+        docIDs = set([storyID*1000 for storyID in tag_search_results[tags.pop()]])
         for tag in tags:
-            docIDs = docIDs.intersection(set(self.tagIndex.getStoryIDsWithTag(tag)))
+            docIDs = docIDs.intersection(set([storyID*1000 for storyID in tag_search_results[tag]]))
         return docIDs
 
     def score_tag_docs(self, tags, docIDs):
