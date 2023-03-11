@@ -60,6 +60,31 @@ class StoryMetadataRecord():
         # Decompresses and returns the description field for the Story
         return zlib.decompress(self._compressedDescription).decode(encoding="utf-8")
 
+    def getLastUpdated(self) -> str:
+        return self.lastUpdated
+    
+    def getStats(self) -> dict:
+        return {
+            "wordCount": self.wordCount,
+            "commentCount": self.commentCount,
+            "bookmarkCount": self.bookmarkCount,
+            "kudosCount": self.kudosCount,
+            "hitCount": self.hitCount
+        }
+    
+    def getLanguage(self) -> str:
+        return self.language
+    
+    def getStoryDescriptors(self) -> dict:
+        return {
+            "storyID": self.storyID,
+            "title": self.title,
+            "author": self.author,
+            "finalChapterCount": self.finalChapterCount,
+            "finalChapterCountKnown": self.finalChapterCountKnown,
+            "finished": self.finished,
+        }
+
     def __eq__(self, other):
         if not isinstance(other, StoryMetadataRecord):
             return False
