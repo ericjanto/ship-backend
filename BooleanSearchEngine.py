@@ -182,7 +182,7 @@ class BooleanSearchEngine():
         # TODO: fix proximity search 
 
         answer = set()
-        searchScope = self.filterDocs(singleChapter = singleChapter, completionStatus = completionStatus, language = language, wordCountFrom = wordCountFrom, wordCountTo = wordCountTo, hitsCountFrom = hitsCountFrom, hitsCountTo = hitsCountTo, kudosCountFrom = kudosCountFrom, kudosCountTo = kudosCountTo, commentsCountFrom = commentsCountFrom, commentsCountTo = commentsCountTo, bookmarksCountFrom = bookmarksCountFrom, bookmarksCountTo = bookmarksCountTo, dateFrom = dateFrom, dateTo = dateTo)
+        searchScope = self.index.getDocIDs()
         for query in expandedQueries:        
             # Step 3: Normalise terms
             for i in range(len(query)):
@@ -206,7 +206,7 @@ class BooleanSearchEngine():
                     withinExactSearchMode = not withinExactSearchMode
 
                     if not withinExactSearchMode and len(exactTerms) > 0:
-                        newQuery.append(self.exactSearch(exactTerms, searchScope))
+                        newQuery.append(self.exactSearch(exactTerms))
                     exactTerms = []
                     continue
                 if withinExactSearchMode:
@@ -264,8 +264,7 @@ class BooleanSearchEngine():
                 print()
 
             # Convert terms into posting lists
-            query = [self.findDocumentsTermOccursIn(term, searchScope) if self.isSymbolTerm(term) else term for term in query]
-
+            query = [self.findDocumentsTermOccursIn(term) if self.isSymbolTerm(term) else term for term in query]
             # Step 6: Handle the NOT cases
             i = 0
             newQuery = []
@@ -459,8 +458,8 @@ class BooleanSearchEngine():
         return filteredDocs
 
 
-    def findDocumentsTermOccursIn(self, term, searchScope):
-        return [doc for doc in self.index.getDocumentsTermOccursIn(term) if doc in searchScope]
+    def findDocumentsTermOccursIn(self, term):
+        return self.index.getDocumentsTermOccursIn(term).get(term,[])
 
     def isProximitySearchMarker(self, symbol):
         return type(symbol) != list and re.match("#\d+\(?$", symbol) is not None
@@ -488,7 +487,7 @@ class BooleanSearchEngine():
     # 1) * is at the very beginning of a phrase - done
     # 2) * is between 2 words - done
     # 3) * is at the very end of a phrase - not done, is it worth it to handle this small edge case (?)
-    def exactSearch(self, orderedTerms, searchScope):
+    def exactSearch(self, orderedTerms):
         # TODO: Error handling for when no ordered terms 
         #       are provided
         orderedTerms = self.removeSubsequentStars(orderedTerms)
@@ -499,13 +498,13 @@ class BooleanSearchEngine():
 
         startIndex = 0 if orderedTerms[0] != "*" else 1 # index of first non-star term
             
-        docs = self.findDocumentsTermOccursIn(orderedTerms[startIndex], searchScope)
+        docs = self.findDocumentsTermOccursIn(orderedTerms[startIndex])
 
         # find docs for remaining words:
         for i in range(startIndex + 1, len(orderedTerms)):
             if orderedTerms[i] == "*":
                 continue 
-            docs = self.intersection(docs, self.findDocumentsTermOccursIn(orderedTerms[i], searchScope)) # docs contain all common docs
+            docs = self.intersection(docs, self.findDocumentsTermOccursIn(orderedTerms[i])) # docs contain all common docs
 
         if len(orderedTerms) == 1 or len(docs) == 0:
             return docs
@@ -513,27 +512,31 @@ class BooleanSearchEngine():
         # TODO: Abstract away access to self.index.terms
         # handles 1) case where * is at the very beginning of a phrase
         if startIndex == 1:
-            previousTermPositions = [(docID, pos) for docID in docs for pos in self.index.getPostingList(orderedTerms[startIndex],docID) if pos != 0]
-
+            #previousTermPositions = [(docID, pos) for docID in docs for pos in self.index.getPostingList([(orderedTerms[startIndex],docID)]).get(orderedTerms[startIndex]) if pos != 0]
+            postinglist = self.index.getPostingList([(orderedTerms[startIndex],docID) for docID in docs]).get(orderedTerms[startIndex])
+            previousTermPositions = [(docID,pos) for docID in postinglist for pos in postinglist[docID] if pos != 0]
         else:
-            previousTermPositions = [(docID, pos) for docID in docs for pos in self.index.getPostingList(orderedTerms[startIndex],docID)]
+            #previousTermPositions = [(docID, pos) for docID in docs for pos in self.index.getPostingList([(orderedTerms[startIndex],docID)]).get(orderedTerms[startIndex])]
+            postinglist = self.index.getPostingList([(orderedTerms[startIndex],docID) for docID in docs]).get(orderedTerms[startIndex])
+            previousTermPositions = [(docID,pos) for docID in postinglist for pos in postinglist[docID]]
 
         # handles 2) case where * is between 2 words
         previousStar = False
+        post_list = self.index.getPostingList([(term,docID) for term in orderedTerms[(startIndex+1):] for (docID, pos) in previousTermPositions])
         for i, term in enumerate(orderedTerms[(startIndex+1):]):
             #TODO: See above todo about abstraction
             if term != "*" and previousStar: # for terms which come after *
                 newPositions = []
                 for (docID, pos) in previousTermPositions: 
                     for pos2 in range(pos + 2, pos + 21): # O(1); upper limit - 20 terms (a sentence) in between 
-                        if pos2 in self.index.getPostingList(term,docID):
+                        if pos2 in post_list[term][docID]:
                             newPositions.append((docID, pos2))
                 previousTermPositions = newPositions
                 previousStar = False 
             elif term != "*" and not previousStar: # for terms which come after another term
                 newPositions = []
                 for (docID, pos) in previousTermPositions:
-                    if (pos + 1) in self.index.getPostingList(term,docID):
+                    if (pos + 1) in post_list[term][docID]:
                         newPositions.append((docID, pos + 1))
                 previousTermPositions = newPositions
                 previousStar = False
@@ -549,9 +552,9 @@ class BooleanSearchEngine():
     def proximitySearch(self, terms, proximityThreshold, searchScope, ordered=False):
         # TODO: Error handling for when no ordered terms 
         #       are provided
-        docs = self.findDocumentsTermOccursIn(terms[0], searchScope)
+        docs = self.findDocumentsTermOccursIn(terms[0])
         for i in range(1, len(terms)):
-            docs = self.intersection(docs, self.findDocumentsTermOccursIn(terms[i], searchScope))
+            docs = self.intersection(docs, self.findDocumentsTermOccursIn(terms[i]))
 
         if len(terms) == 1 or len(docs) == 0:
             return docs
@@ -566,7 +569,7 @@ class BooleanSearchEngine():
         instances = []
         # Build positional list
         for term in terms:
-            for pos in self.index.getPostingList(term,docID):
+            for pos in self.index.getPostingList([(term,docID)])[term][docID]:
                 instances.append((term, pos))
         instances = sorted(instances, key=lambda x: x[1])
 
@@ -595,7 +598,7 @@ class BooleanSearchEngine():
     def orderedTermsWithinProximityInDocument(self, terms, docID, proximityThreshold):
         instances = []
         for term in terms:
-            for pos in self.index.getPostingList(term,docID):
+            for pos in self.index.getPostingList([(term,docID)]).get(term):
                 instances.append(term,pos)
         instances = sorted(instances, key=lambda x: x[1])
 

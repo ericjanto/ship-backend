@@ -75,19 +75,14 @@ def test(request: Request):
 async def query(request: Request):
     search = await request.body()
     query = json.loads(search)["query"]
-    print(query)
     tags = json.loads(search)["tags"]
-    print(tags)
     filter_params = json.loads(search)["filter_params"]
-    print(filter_params)
     if not filter_params:
         filter_params = dict()
     tag_str = ' '.join(['TAG{'+ tag +'}' for tag in tags])
-    print(f'{tag_str} {query}')
-    results = search_engine.search(f'{tag_str} {query}',**filter_params)
-    
+    query_str = tag_str + query if len(tag_str)>0 else query
+    results = search_engine.search(query_str,**filter_params)
     response = docID_2_document([docID for docID,score in results])
-
     return JSONResponse(content=response, status_code=200)
 
 

@@ -19,8 +19,9 @@ query_examples = ["Who what who were AND (what OR (where AND are you))",
                   "Doctor Mallard",
                   "mix of words with \"Tails * bench\"",
                   "\"Tails * bench\"",
-                  "Other terms with Mon*",
-                  "Mon*",
+                  "Other terms with Mon*",]
+                 
+harder_queries = ["Mon*",
                   "Mon*",
                   "Mon*",
                   "Mon*",
@@ -56,7 +57,7 @@ class Search_Engine():
         all_docIDs = self.index.getDocIDs()
         total_term_counts = sum(self.termcounts.get_tokens_before_stemming(all_docIDs).values())
         self.avg_doc_len = total_term_counts/len(all_docIDs)
-        self.tag_regex = re.compile(r'TAG{\w+}')
+        self.tag_regex = re.compile(r'TAG{ *\w+ *}')
     
     def search(self,query,**kwargs):
         assert self.check_args(kwargs)
@@ -75,7 +76,7 @@ class Search_Engine():
             query = query.replace('}',' }')
             tokens = query.split()
             doc_IDs = self.recur_connectives(tokens)
-
+            tokens = self.tag_regex.sub('',query).split()
             intra_wild_card_terms = [token for token in tokens if (('*' in token) and (len(token) > 1))]
             if len(intra_wild_card_terms) > 0:
                 for wild_card_term in intra_wild_card_terms:
@@ -88,10 +89,11 @@ class Search_Engine():
             terms = self.ranker.preprocess_query(query)
             tag_docIDs = set() #self.tag_search(terms)
             all_doc_IDs = doc_IDs.union(tag_docIDs)
+            print('pre filter',list(all_doc_IDs)[:10])
             all_doc_IDs = self.apply_filters(all_doc_IDs,query_filters)
+            print('post filter',all_doc_IDs[:10])
             doc_score_pairs = dict.fromkeys(all_doc_IDs,0)
             query_scores = self.ranker.score_documents(terms,all_doc_IDs)
-            
             for docID,score in query_scores:
                 doc_score_pairs[docID] += score
 
