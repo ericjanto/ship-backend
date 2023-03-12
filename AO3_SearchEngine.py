@@ -77,22 +77,21 @@ class Search_Engine():
             tokens = query.split()
             doc_IDs = self.recur_connectives(tokens)
             tokens = self.tag_regex.sub('',query).split()
-            intra_wild_card_terms = [token for token in tokens if (('*' in token) and (len(token) > 1))]
-            if len(intra_wild_card_terms) > 0:
-                for wild_card_term in intra_wild_card_terms:
-                    tokens.remove(wild_card_term)
-                expanded_terms = self.permutermIndexTrie.expand_wildcard_terms(intra_wild_card_terms)
-                expanded_terms = [term[0] for term in expanded_terms]
-                tokens += expanded_terms
-
+            tokens = [token for token in tokens if '*' not in token]
+            # intra_wild_card_terms = [token for token in tokens if (('*' in token) and (len(token) > 1))]
+            # if len(intra_wild_card_terms) > 0:
+            #     for wild_card_term in intra_wild_card_terms:
+            #         tokens.remove(wild_card_term)
+            #     expanded_terms = self.permutermIndexTrie.expand_wildcard_terms(intra_wild_card_terms)
+            #     expanded_terms = [term[0] for term in expanded_terms]
+            #     tokens += expanded_terms
             query = ' '.join(tokens)
             terms = self.ranker.preprocess_query(query)
             tag_docIDs = set() #self.tag_search(terms)
             all_doc_IDs = doc_IDs.union(tag_docIDs)
-            print('pre filter',list(all_doc_IDs)[:10])
             all_doc_IDs = self.apply_filters(all_doc_IDs,query_filters)
-            print('post filter',all_doc_IDs[:10])
             doc_score_pairs = dict.fromkeys(all_doc_IDs,0)
+            print(terms)
             query_scores = self.ranker.score_documents(terms,all_doc_IDs)
             for docID,score in query_scores:
                 doc_score_pairs[docID] += score

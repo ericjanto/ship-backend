@@ -264,7 +264,9 @@ class BooleanSearchEngine():
                 print()
 
             # Convert terms into posting lists
-            query = [self.findDocumentsTermOccursIn(term) if self.isSymbolTerm(term) else term for term in query]
+            posting_terms_idxs = [term for term in query if self.isSymbolTerm(term)]
+            postings = self.findDocumentsTermOccursIn(posting_terms_idxs)
+            query = [postings.get(term,term) if term != [] else term for term in query]
             # Step 6: Handle the NOT cases
             i = 0
             newQuery = []
@@ -451,15 +453,15 @@ class BooleanSearchEngine():
         filteredDocs = set()
 
         for doc in allDocs:
-            storyID = doc / 1000
+            storyID = doc // 1000
             if storyID in filteredStoryIDs:
                 filteredDocs.add(doc)
 
         return filteredDocs
 
 
-    def findDocumentsTermOccursIn(self, term):
-        return self.index.getDocumentsTermOccursIn(term).get(term,[])
+    def findDocumentsTermOccursIn(self, terms):
+        return self.index.getDocumentsTermOccursIn(terms)
 
     def isProximitySearchMarker(self, symbol):
         return type(symbol) != list and re.match("#\d+\(?$", symbol) is not None
@@ -497,14 +499,15 @@ class BooleanSearchEngine():
             return []
 
         startIndex = 0 if orderedTerms[0] != "*" else 1 # index of first non-star term
-            
-        docs = self.findDocumentsTermOccursIn(orderedTerms[startIndex])
+        
+        postings = self.findDocumentsTermOccursIn(orderedTerms)
+        docs = postings.get(orderedTerms[startIndex],[])
 
         # find docs for remaining words:
         for i in range(startIndex + 1, len(orderedTerms)):
             if orderedTerms[i] == "*":
                 continue 
-            docs = self.intersection(docs, self.findDocumentsTermOccursIn(orderedTerms[i])) # docs contain all common docs
+            docs = self.intersection(docs, postings.get(orderedTerms[i],[])) # docs contain all common docs
 
         if len(orderedTerms) == 1 or len(docs) == 0:
             return docs
@@ -552,9 +555,10 @@ class BooleanSearchEngine():
     def proximitySearch(self, terms, proximityThreshold, searchScope, ordered=False):
         # TODO: Error handling for when no ordered terms 
         #       are provided
-        docs = self.findDocumentsTermOccursIn(terms[0])
+        postings = self.findDocumentsTermOccursIn(terms)
+        docs = postings.get(terms[0],[])
         for i in range(1, len(terms)):
-            docs = self.intersection(docs, self.findDocumentsTermOccursIn(terms[i]))
+            docs = self.intersection(docs, postings.get(terms[i],[]))
 
         if len(terms) == 1 or len(docs) == 0:
             return docs

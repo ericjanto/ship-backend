@@ -29,8 +29,8 @@ class PIIClientFlask:
         response = requests.post(f'http://{self.ip}:{self.port}/getDocFrequency', json=data)
         return response.json()
 
-    def getDocumentsTermOccursIn(self, term):
-        data = {'terms': [term]}
+    def getDocumentsTermOccursIn(self, terms):
+        data = {'terms': terms}
         response = requests.post(f'http://{self.ip}:{self.port}/getDocumentsTermOccursIn', json=data)
         return response.json()
 
