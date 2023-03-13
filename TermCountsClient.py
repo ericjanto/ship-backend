@@ -37,10 +37,11 @@ class TermCountsClient:
         return response.json()
 
 if __name__ == '__main__':
-    tcClient = TermCountsClient('localhost', 5000)
+    tcClient = TermCountsClient('localhost', 5003)
     print("1.", tcClient.get_tokens_before_processing([51664000, 51233000]))
     print("2.", tcClient.get_tokens_before_stemming([51664000]))
     print("3.", tcClient.get_unique_tokens_before_processing([51664000]))
     print("4.", tcClient.get_unique_tokens_before_stemming([51664000]))
     print("5.", tcClient.get_tokens_after_stemming([51664000]))
     print("6.", tcClient.get_all_term_counts([51664000]))
+    print("7.", tcClient.get_all_term_counts([]))

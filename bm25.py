@@ -47,8 +47,10 @@ class BM25_Model():
         self.index = positionalInvertedIndex
         self.stopwords = stopwords
         self.term_counts = term_counts
-        total_term_counts = sum([term_counts[docID][1] for docID in term_counts])
-        self.avg_doc_len = total_term_counts/len(term_counts.keys())
+        all_term_counts = self.term_counts.get_tokens_before_stemming(self.index.getDocIDs())
+        
+        total_term_counts = sum(all_term_counts.values())
+        self.avg_doc_len = total_term_counts/len(all_term_counts)
 
     def preprocess_query(self,query,removeStopWords=True,stem=True):
         """Processes a set of terms by performing case folding, stopword removal and
@@ -98,14 +100,21 @@ class BM25_Model():
         # TODO: k is a hyperparameter which can be tuned later on. Currently using best
         # practise value given from the lectures.
         results = []
+        doc_nos = list(doc_nos)
+        term_counts = self.term_counts.get_tokens_before_stemming(doc_nos)
+        N = self.index.getNumDocs()[0]
+        tf_dict = self.index.getTermFrequency([(term,doc_no) for term in query for doc_no in doc_nos])
+
+        df_dict = [self.index.getDocFrequency(term) for term in query]
+        df_dict = {k: v for d in df_dict for k, v in d.items()}
+
         for doc_no in doc_nos:
             doc_score = 0
             for term in query:
-                tf = self.index.getTermFrequency(term,doc_no)
-                df = self.index.getDocFrequency(term)
-                L_d = self.term_counts[doc_no][1]
+                tf = tf_dict.get(term).get(doc_no,0)
+                df = df_dict.get(term,0)
+                L_d = term_counts.get(doc_no,0)
                 avg_L = self.avg_doc_len
-                N = self.index.getNumDocs()
                 C_td = (tf/(1-b + b*(L_d/avg_L))) + 0.5
                 #term_1 = tf*(k+1)/((tf+k)*(1-0.75+0.75*(L_d/avg_L)))
                 term_1 = ((k+1)*C_td)/(k+C_td)
