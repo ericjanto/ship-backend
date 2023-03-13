@@ -31,9 +31,13 @@ class TermCountsClient:
         response = requests.post(f'http://{self.ip}:{self.port}/getTokensAfterStemming', json=data)
         return response.json()
 
-    def get_all_term_counts(self, docIDs):
+    def get_all_term_counts_for(self, docIDs):
         data = {'docIDs': docIDs}
-        response = requests.post(f'http://{self.ip}:{self.port}/getAllTermCounts', json=data)
+        response = requests.post(f'http://{self.ip}:{self.port}/getAllTermCountsForDocIds', json=data)
+        return response.json()
+
+    def get_all_term_counts(self):
+        response = requests.get(f'http://{self.ip}:{self.port}/getAllTermCounts')
         return response.json()
 
 if __name__ == '__main__':
@@ -43,4 +47,5 @@ if __name__ == '__main__':
     print("3.", tcClient.get_unique_tokens_before_processing([51664000]))
     print("4.", tcClient.get_unique_tokens_before_stemming([51664000]))
     print("5.", tcClient.get_tokens_after_stemming([51664000]))
-    print("6.", tcClient.get_all_term_counts([51664000]))
+    print("6.", tcClient.get_all_term_counts_for([51664000]))
+    # print("7.", tcClient.get_all_term_counts())
