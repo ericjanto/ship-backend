@@ -33,6 +33,14 @@ class StoryMetadataRecord():
         # All dates are strings in the UNIX format
         self.lastUpdated = None
 
+    def setAuthor(self, author) -> None:
+        # TODO: currently a hacky workaround for the
+        # fact that this isn't handling multiple authors properly
+        if isinstance(author, list):
+            self.author = ", ".join(author)
+        else:
+            self.author = author
+
     def setFinalChapterCount(self, finalChapterCount: int) -> None:
         if finalChapterCount is None or finalChapterCount < 0:
             self.finalChapterCountKnown = False
