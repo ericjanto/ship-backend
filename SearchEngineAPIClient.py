@@ -23,8 +23,8 @@ hard_queries = [ "Other terms with Mon*",
                   "Mon*",
                   "Mon*",]
 
-response = requests.get('http://localhost:5000/test')
-#print(response.text)
+response = requests.get('http://storyhunter.live:80/test')
+print(response.text)
 
 class SearchEngineAPIClient:
     def __init__(self, ip, port):
@@ -39,7 +39,7 @@ class SearchEngineAPIClient:
         return response.json()
     
 if __name__ == '__main__':
-    client = SearchEngineAPIClient('localhost',5000)
+    client = SearchEngineAPIClient('storyhunter.live',80)
     print(client.query("",['anime','manga']))
     for query in hard_queries:
         print(query)

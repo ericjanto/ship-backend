@@ -18,6 +18,7 @@ app = FastAPI()
 search_engine = None
 index = None
 metadataIndex = None
+index_ip = ''
 
 base_url = 'https://archiveofourown.org/'
 
@@ -54,11 +55,12 @@ async def startup_event():
     global search_engine
     global index
     global metadataIndex
+    global index_ip
 
-    index = PIIClientFlask('localhost',5001)
-    tag_index = TagPIIClientFastAPI('localhost',5002)
-    term_counts = TermCountsClient('localhost',5003)
-    metadataIndex = StoryMetadataClient('localhost',5004)
+    index = PIIClientFlask(index_ip,5001)
+    tag_index = TagPIIClientFastAPI(index_ip,5002)
+    term_counts = TermCountsClient(index_ip,5003)
+    metadataIndex = StoryMetadataClient(index_ip,5004)
     with open('data/doc-terms.pickle','rb') as f:
         data = f.read()
         permu_terms = pickle.loads(data)
@@ -88,12 +90,14 @@ async def query(request: Request):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 3:
-        print("Usage: python SearchEngineAPIServer.py <ip> <port>")
+    if len(sys.argv) != 4:
+        print("Usage: python SearchEngineAPIServer.py <ip> <port> <index ip>")
         sys.exit(1)
     
     ip = sys.argv[1]
     print("IP:", ip)
     port = int(sys.argv[2])
     print("Port:", port)
+    index_ip = sys.argv[3]
+    print("Index IP: ", index_ip)
     uvicorn.run(app, host=ip, port=port) 
