@@ -1,0 +1,2 @@
+data/compressedMetadataFull.bin filter=lfs diff=lfs merge=lfs -text
+data/compressedTagIndexFull.bin filter=lfs diff=lfs merge=lfs -text
