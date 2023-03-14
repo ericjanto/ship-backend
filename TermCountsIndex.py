@@ -2,8 +2,10 @@ class TermCountsIndex:
     def __init__(self, index):
         self.index = index
 
-    def appendIntoTermCounts(self, termCounts:dict):
+    def append_into_term_counts(self, termCounts:dict):
         for docID, termCount in termCounts.items():
+            if type(docID) == str:
+                docID = int(docID)
             if docID in self.index:
                 self.index[docID] = [x + y for x, y in zip(self.index[docID], termCount)]
             else:

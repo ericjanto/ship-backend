@@ -75,6 +75,14 @@ async def getAllTermCountsForDocIds(request: Request):
 async def getAllTermCounts():
     return JSONResponse(content=index.get_all_term_counts(), status_code=200)
 
+@app.put("/appendIntoTermCounts")
+async def appendIntoTermCounts(request: Request):
+    termCounts = await request.body()
+    termCounts = json.loads(termCounts)["termCounts"]
+    for termCount in termCounts:
+        index.append_into_term_counts(termCount)
+    return JSONResponse(content="Appended!", status_code=200)
+
 
 if __name__ == "__main__":
     global indexFile

@@ -1,8 +1,5 @@
 import requests
 import json
-# Perform a GET request
-response = requests.get('http://localhost:5001/test')
-print(response.text)
 
 ### Convert above to a class and add more methods
 class PIIClientFlask:
@@ -14,7 +11,6 @@ class PIIClientFlask:
         response = requests.get(f'http://{self.ip}:{self.port}/getDistinctTermsCount')
         return response.json()
         
-
     def getEnglishTermsCount(self):
         response = requests.get(f'http://{self.ip}:{self.port}/getEnglishTermsCount')
         return response.json()
@@ -25,7 +21,7 @@ class PIIClientFlask:
         return response.json()
 
     def getDocFrequency(self, term):
-        data = {'terms': [term]}
+        data = {'terms': term}
         response = requests.post(f'http://{self.ip}:{self.port}/getDocFrequency', json=data)
         return response.json()
 
@@ -46,22 +42,22 @@ class PIIClientFlask:
 
     def getNumDocs(self):
         response = requests.get(f'http://{self.ip}:{self.port}/getNumDocs')
-        return response.json(), type(response.json())
+        return response.json()
 
     def getDocIDs(self):
         response = requests.get(f'http://{self.ip}:{self.port}/getDocIDs')
         return response.json()
 
 if __name__ == '__main__':
-    client = PIIClientFlask('localhost', 5001)
-    client2 = PIIClientFlask('localhost', 5001)
+    client = PIIClientFlask('localhost', 5000)
+    client2 = PIIClientFlask('localhost', 5000)
     print("1.", client.getDistinctTermsCount())
     print("2.", client2.getEnglishTermsCount())
-    print("3.",client.getTermFrequency([('the', 1), ('the', 2)]))
-    print("4.",client2.getDocFrequency('the'))
-    print("5.",client.getDocumentsTermOccursIn('the'))
-    print("6.",client2.getPostingList([('the', 1), ('the', 2)]))
-    print("7.",client.tfidf([('the', 1), ('the', 2)]))
+    print("3.",client.getTermFrequency([('appl', 247000), ('banan', 247000)]))
+    print("4.",client2.getDocFrequency(['appl']))
+    print("5.",client.getDocumentsTermOccursIn(['appl']))
+    print("6.",client2.getPostingList([('appl', 247000), ('banan', 247000)]))
+    print("7.",client.tfidf([('appl', 247000), ('appl', 247000)]))
     print("8.",client2.getNumDocs())
-    print("9.",client.getDocIDs())
+    # print("9.",client.getDocIDs())
    

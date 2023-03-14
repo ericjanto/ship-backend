@@ -20,6 +20,10 @@ class PositionalInvertedIndex():
         self.documentCount = 0
 
     def insertTermInstance(self, term, docID, position):
+        if type(docID)==str:
+            docID = int(docID)
+        if type(position)==str:
+            position = int(position)
         if docID not in self.documentIDs:
             self.documentIDs.add(docID)
             self.documentCount += 1
@@ -36,6 +40,8 @@ class PositionalInvertedIndex():
         TODO: Make this faster when inserting into a posting
         list that already exists
         """
+        if type(docID)==str:
+            docID = int(docID)
         if docID not in self.documentIDs:
             self.documentIDs.add(docID)
             self.documentCount += 1
@@ -53,6 +59,8 @@ class PositionalInvertedIndex():
             # due to how we split the index on importing, but it is
             # worth looking at
             for pos in positions:
+                if type(pos)==str:
+                    pos = int(pos)
                 self.insertTermInstance(term, docID, pos)
 
     def getDistinctTermsCount(self):
@@ -69,6 +77,8 @@ class PositionalInvertedIndex():
 
     def getTermFrequency(self, term: str, docID: int) -> int:
         ''' Count the number of times a term occurred in a document. '''
+        if type(docID)==str: 
+            docID = int(docID)
         if term not in self.terms:
             return 0
         if docID not in self.terms[term]:
@@ -94,7 +104,8 @@ class PositionalInvertedIndex():
         """
         Returns the posting list of a term in a specified document ID
         """
-        
+        if type(docID)==str: 
+            docID = int(docID)
         if term not in self.terms or docID not in  self.terms[term]:
             return []
         
@@ -109,6 +120,8 @@ class PositionalInvertedIndex():
         If either the tf or df value are zero, will
         return 0
         '''
+        if type(docID)==str: 
+            docID = int(docID)
         if self.getDocFrequency(term) == 0 or self.getTermFrequency(term, docID) == 0:
             return 0
         return (1 + log10(self.getTermFrequency(term, docID))) * log10(self.documentCount / self.getDocFrequency(term))

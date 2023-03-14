@@ -15,12 +15,6 @@ async def startup_event():
     index = PositionalInvertedIndexLoader.loadFromCompressedFile(indexFile)
     print("Index loaded")
 
-
-@app.get("/test")
-def test(request: Request):
-    if request.method == 'GET':
-        return JSONResponse(content="Hello World", status_code=200)
-
 @app.get("/getDistinctTermsCount")
 async def getDistinctTermsCount(request: Request):
     return JSONResponse(content=index.getDistinctTermsCount(), status_code=200)
@@ -32,7 +26,7 @@ async def getEnglishTermsCount(request: Request):
 @app.post("/getTermFrequency")
 async def getTermFrequency(request: Request):
     pairs = await request.body()
-    pairs = json.loads(pairs)["pairs"]
+    pairs = json.loads(pairs, parse_int=int)["pairs"]
     response = {}
     for term, docID in pairs:
         if term not in response:
@@ -43,7 +37,7 @@ async def getTermFrequency(request: Request):
 @app.post("/getDocFrequency")
 async def getDocFrequency(request: Request):
     terms = await request.body()
-    terms = json.loads(terms)["terms"]
+    terms = json.loads(terms, parse_int=int)["terms"]
     response = {}
     for term in terms:
         response[term] = index.getDocFrequency(term)
@@ -52,7 +46,7 @@ async def getDocFrequency(request: Request):
 @app.post("/getDocumentsTermOccursIn")
 async def getDocumentsTermOccursIn(request: Request):
     terms = await request.body()
-    terms = json.loads(terms)["terms"]
+    terms = json.loads(terms, parse_int=int)["terms"]
     response = {}
     for term in terms:
         response[term] = index.getDocumentsTermOccursIn(term)
@@ -61,7 +55,7 @@ async def getDocumentsTermOccursIn(request: Request):
 @app.post("/getPostingList")
 async def getPostingList(request: Request):
     pairs = await request.body()
-    pairs = json.loads(pairs)["pairs"]
+    pairs = json.loads(pairs, parse_int=int)["pairs"]
     response = {}
     for term, docID in pairs:
         if term not in response:
@@ -72,7 +66,7 @@ async def getPostingList(request: Request):
 @app.post("/tfidf")
 async def tfidf(request: Request):
     pairs = await request.body()
-    pairs = json.loads(pairs)["pairs"]
+    pairs = json.loads(pairs, parse_int=int)["pairs"]
     response = {}
     for term, docID in pairs:
         if term not in response:
