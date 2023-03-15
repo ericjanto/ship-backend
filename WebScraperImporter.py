@@ -27,7 +27,6 @@ class WebScraperImporter:
         chaptersJSON = self.loadJSONFile(pathToChaptersJSON)
         metadataJSON = self.loadJSONFile(pathToMetadataJSON)
 
-        print(metadataJSON["45541321"]["summary"])
 
         chaptersIndex = PositionalInvertedIndex()
         tagsIndex = TagPositionalInvertedIndex()
@@ -39,9 +38,9 @@ class WebScraperImporter:
             chapterNo = chapterID % 1000
             storyNo = chapterID // 1000
 
-            print(storyNo)
-            print(chapterNo)
-            print()
+            # print(storyNo)
+            # print(chapterNo)
+            # print()
 
             if chapterNo == 999:
                 continue
@@ -68,7 +67,7 @@ class WebScraperImporter:
         for storyNoStr in metadataJSON:
             storyNoInt = int(storyNoStr)
 
-            TAG_TYPES = ["warnings", "categories", "fandom", "relationships", "characters", "freeform"]
+            TAG_TYPES = ["ratings", "warnings", "categories", "fandom", "relationships", "characters", "freeform"]
             for tagType in TAG_TYPES:
                 for tag in metadataJSON[storyNoStr][tagType]:
                     tagsIndex.insertTagInstance(tag, storyNoInt)
@@ -83,7 +82,7 @@ class WebScraperImporter:
             metadata.setDescription(metadataJSON[storyNoStr]["summary"])
 
 
-            currentChapters, maxChapters = [x for x in metadataJSON[storyNoStr]["stats"][2][1].split("/")]
+            currentChapters, maxChapters = [x for x in metadataJSON[storyNoStr]["stats"]["chapters"].split("/")]
             metadata.currentChapterCount = int(currentChapters)
 
             if maxChapters == "?":
@@ -95,20 +94,26 @@ class WebScraperImporter:
             if metadata.currentChapterCount == metadata.finalChapterCount:
                 metadata.finished = True
 
-            metadata.language = metadataJSON[storyNoStr]["language"]
+            # This is very hacky, but works given we don't intend
+            # to support non english stories
+            language = metadataJSON[storyNoStr]["language"]
+            language = 1 if language.lower() == "english" else 2
+            metadata.language = language
 
-            metadata.wordCount = int(metadataJSON[storyNoStr]["stats"][1][1])
-
-            metadata.commentCount = 0 #TODO
-            metadata.bookmarkCount = 0 #TODO
-            metadata.kudosCount = 0 #TODO
-
-            lastUpdated = metadataJSON[storyNoStr]["stats"][0][1]
-            dt = datetime.strptime(lastUpdated, "%Y-%m-%d")
-            if dt <= datetime(1970, 1, 1):
+            metadata.wordCount = int(metadataJSON[storyNoStr]["stats"]["words"][1])
+            metadata.commentCount = int(metadataJSON[storyNoStr]["stats"]["comments"])
+            metadata.bookmarkCount = int(metadataJSON[storyNoStr]["stats"]["bookmarks"])
+            metadata.kudosCount = int(metadataJSON[storyNoStr]["stats"]["kudos"])
+            metadata.hitCount = int(metadataJSON[storyNoStr]["stats"]["hits"])
+            lastUpdated = metadataJSON[storyNoStr]["stats"]["published"]
+            if lastUpdated == "-999":
                 lastUpdatedUnix = 0
             else:
-                lastUpdatedUnix = int(dt.timestamp())
+                dt = datetime.strptime(lastUpdated, "%Y-%m-%d")
+                if dt <= datetime(1970, 1, 1):
+                    lastUpdatedUnix = 0
+                else:
+                    lastUpdatedUnix = int(dt.timestamp())
 
             metadata.lastUpdated = lastUpdatedUnix
             metadataIndex[storyNoInt] = metadata
@@ -138,7 +143,7 @@ class WebScraperImporter:
                 outputPath,
                 f"termCounts-{dateStr}.bin"
             ),
-            termCounts
+            termCounts.termCounts
         )
 
 
@@ -150,6 +155,7 @@ class WebScraperImporter:
 if __name__ == "__main__":
     importer = WebScraperImporter()
 
-    importer.convertWebScrapeDumpsToIndexChunks("data/chapters2023-03-05.json",
-                                                "data/metaData2023-03-05.json",
-                                                "data/")
+    importer.convertWebScrapeDumpsToIndexChunks("data/chapters2023-03-13.json",
+                                                "data/metaData2023-03-13.json",
+                                                "data/",
+                                                "2023-03-14")

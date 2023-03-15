@@ -88,6 +88,7 @@ class StoryMetadataRecord():
             "storyID": self.storyID,
             "title": self.title,
             "author": self.author,
+            "currentChapterCount": self.currentChapterCount,
             "finalChapterCount": self.finalChapterCount,
             "finalChapterCountKnown": self.finalChapterCountKnown,
             "finished": self.finished,
