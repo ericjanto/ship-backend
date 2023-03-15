@@ -59,7 +59,7 @@ class QueryParameters(BaseModel):
     # valid filter params:
     singleChapter: Optional[bool] = None
     completionStatus: Optional[str] = None
-    language: Optional[str] = None
+    # language: Optional[str] = None
     wordCountFrom: Optional[int] = None
     wordCountTo: Optional[int] = None
     hitsCountFrom: Optional[int] = None
@@ -70,8 +70,8 @@ class QueryParameters(BaseModel):
     commentsCountTo: Optional[int] = None
     bookmarksCountTo: Optional[int] = None
     bookmarksCountTo: Optional[int] = None
-    dateFrom: Optional[str] = None
-    dateTo: Optional[str] = None
+    lastUpdatedFrom: Optional[str] = None
+    lastUpdatedTo: Optional[str] = None
 
 
 @app.get("/query")
@@ -86,7 +86,7 @@ async def read_query(request: Request):
 
     filter_params = {}
     for key, value in query_parameters.__dict__.items():
-        if value and key not in ['q', 'p', 'l']:
+        if value and key not in ['q', 'p', 'l', 'tags']:
             filter_params[key] = value
 
     page = query_parameters.p
