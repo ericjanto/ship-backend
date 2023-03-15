@@ -101,7 +101,7 @@ class ChapterDBImporter:
             docID = row[0]
             chapter = row[1]
             self.termCounter.countTermsRowWise(chapter, docID)
-            preprocessedChapter = self.preprocessor.preprocessDocument(chapter, removeStopWords=False, stem=False)
+            preprocessedChapter = self.preprocessor.preprocessDocument(chapter, removeStopWords=True, stem=False)
 
             for term in preprocessedChapter:
                 uniquePreStemmedTerms.add(term)
