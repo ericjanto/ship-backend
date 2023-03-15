@@ -75,8 +75,52 @@ class ChapterDBImporter:
             PositionalInvertedExporter.saveToCompressedIndex(index, outputTo)
         
         TermCountsExporter.saveToFile(os.path.join("./data/", "termCounts.bin"), self.termCounter.termCounts)
-            
-        
+
+    def importTermCountsAndDocTerms(self, outputPath: str, chaptersPerChunk: int = 50000, chunkLimit: int = None, verbose=False) -> None:
+
+        print(f"Importing term counts and pre stemmed doc terms for {chunkLimit} chunks")
+
+        if not os.path.exists(outputPath):
+            os.makedirs(outputPath)
+
+        chunkNo = 0
+        chaptersInCurrentChunk = 0
+
+        uniquePreStemmedTerms = set()
+
+        self.cursor.execute(self.query)  # Assuming this doesn't cause RAM issues, ie, doesn't load everything
+
+        for i, row in enumerate(self.cursor):
+
+            if chunkLimit and chunkNo >= chunkLimit:
+                break
+
+            if verbose and i % 10000 == 0:
+                print(f"Preprocessed and indexed {i / 1000000} million chapters")
+
+            docID = row[0]
+            chapter = row[1]
+            self.termCounter.countTermsRowWise(chapter, docID)
+            preprocessedChapter = self.preprocessor.preprocessDocument(chapter, removeStopWords=False, stem=False)
+
+            for term in preprocessedChapter:
+                uniquePreStemmedTerms.add(term)
+            chaptersInCurrentChunk += 1
+
+            if chaptersInCurrentChunk >= chaptersPerChunk:
+
+                chunkNo += 1
+                chaptersInCurrentChunk = 0
+
+                print(f"Processed {chunkNo} chunks")
+
+        TermCountsExporter.saveToFile(os.path.join("./data/", "termCountsFull.bin"), self.termCounter.termCounts)
+
+        docTermsOutputPath = os.path.join("./data/", "doc-terms-full.pickle")
+        with open(docTermsOutputPath, "wb") as f:
+            pickle.dump(uniquePreStemmedTerms, f)
+
+
 if __name__ == "__main__":
     """
     conn = sqlite3.connect("smallerDB.sqlite3")
@@ -161,10 +205,11 @@ if __name__ == "__main__":
 
     # Update the paths in the following two lines: the first is where you read the db from
     # the second where to write the chunks to.
-    # dbIdx = ChapterDBImporter("smallerDB.sqlite3", QUERY)
+    dbIdx = ChapterDBImporter(r"../ao3_dump/organizedData.sqlite3", QUERY)
     # dbIdx.importChaptersToIndex("./data/compressed-chapter-indexes/", 25000, limit=10000000, verbose=True)
+    dbIdx.importTermCountsAndDocTerms("./data/compressed-chapter-indexes", 25000, chunkLimit=35, verbose=True)
 
-    index = PositionalInvertedIndexLoader.loadFromMultipleCompressedFiles("./data/compressed-chapter-indexes/", chunk_limit=50, verbose=True)
+    #index = PositionalInvertedIndexLoader.loadFromMultipleCompressedFiles("./data/compressed-chapter-indexes/", chunk_limit=50, verbose=True)
 
     # reloadedIndex = PositionalInvertedIndexLoader.loadFromMultipleCompressedFiles("./data/compressed-chapter-indexes/", verbose=True)
 
