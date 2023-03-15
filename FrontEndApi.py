@@ -89,13 +89,18 @@ async def read_query(request: Request):
         if value and key not in ['q', 'p', 'l', 'tags']:
             filter_params[key] = value
 
+    query = str(query_parameters.q)
     page = query_parameters.p
     limit = query_parameters.l
     
-    print(query_parameters.__dict__)
+    print(str(query))
+    print(tags)
     print(filter_params)
 
-    results_query = await cached_search(query_parameters.q, tags, filter_params)
+    # results_query = await cached_search(query_parameters.q, tags, filter_params)
+    # results_query = search_engine_client.query(query, tags, filter_params)
+    print(str(query) == "harry potter")
+    results_query = search_engine_client.query('"harry potter"', [], {})
 
     end = page * limit
     start = end - limit
