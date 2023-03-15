@@ -124,6 +124,7 @@ class Search_Engine():
                 if 'TAG{' == token:
                     tag_latch = True
             tag_results = None
+            results = set()
             if tags:
                 tag_results = self.tag_search(tags)
             else:
