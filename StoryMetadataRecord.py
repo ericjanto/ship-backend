@@ -77,7 +77,8 @@ class StoryMetadataRecord():
             "commentCount": self.commentCount,
             "bookmarkCount": self.bookmarkCount,
             "kudosCount": self.kudosCount,
-            "hitCount": self.hitCount
+            "hitCount": self.hitCount,
+            "lastUpdated": self.lastUpdated
         }
     
     def getLanguage(self) -> str:
