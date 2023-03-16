@@ -3,7 +3,7 @@ from PIIClientFastAPI import PIIClientFlask
 from TagPIIClientFastAPI import TagPIIClientFastAPI
 from TermCountsClient import TermCountsClient
 from StoryMetadataClient import StoryMetadataClient
-from WildcardSearch import create_permuterm_index_trie
+from PermutermIndexLoader import PermutermIndexLoader
 from preprocessing import loadStopWordsIntoSet
 # TODO: Also need story metadata client
 import json
@@ -75,10 +75,7 @@ async def startup_event():
     tag_index = TagPIIClientFastAPI(index_ip,5002)
     term_counts = TermCountsClient(index_ip,5003)
     metadataIndex = StoryMetadataClient(index_ip,5004)
-    with open('data/doc-terms.pickle','rb') as f:
-        data = f.read()
-        permu_terms = pickle.loads(data)
-    permuterm_trie = create_permuterm_index_trie(permu_terms)
+    permuterm_trie = PermutermIndexLoader().loadFromCompressedFile('data/permuterm-index-full.bz2')
     stopwords = loadStopWordsIntoSet('englishStopWords.txt')
     search_engine = Search_Engine(index,permuterm_trie,tag_index,metadataIndex,stopwords,term_counts)
 
