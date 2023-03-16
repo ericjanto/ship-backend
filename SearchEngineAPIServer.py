@@ -12,6 +12,7 @@ import pickle
 import sys
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 app = FastAPI()
@@ -19,6 +20,19 @@ search_engine = None
 index = None
 metadataIndex = None
 index_ip = ''
+
+# origins = [
+#     "http://localhost:3002/",
+#     "https://search.storyhunter.live"
+# ]
+
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=origins,
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
 
 base_url = 'https://archiveofourown.org/'
 
@@ -71,9 +85,9 @@ async def startup_event():
 @app.get("/test")
 def test(request: Request):
     if request.method == 'GET':
-        return JSONResponse(content="Hello Worlds", status_code=200)
+        return JSONResponse(content="Hello World", status_code=200)
     
-@app.post("/query")
+@app.get("/query")
 async def query(request: Request):
     search = await request.body()
     query = json.loads(search)["query"]

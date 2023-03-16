@@ -19,7 +19,9 @@ query_examples = ["Who what who were AND (what OR (where AND are you))",
                   "Doctor Mallard",
                   "mix of words with \"Tails * bench\"",
                   "\"Tails * bench\"",
-                  "Other terms with Mon*",]
+                  "Other terms with Mon*",
+                  '"harry potter"',
+                  "harry potter"]
                  
 harder_queries = ["Mon*",
                   "Mon*",
@@ -124,6 +126,7 @@ class Search_Engine():
                 if 'TAG{' == token:
                     tag_latch = True
             tag_results = None
+            results = set()
             if tags:
                 tag_results = self.tag_search(tags)
             else:
@@ -293,4 +296,5 @@ if __name__ == "__main__":
     print("Stopwords loaded")
     api = Search_Engine(index,permuterm_index_trie,tag_index,metadata_dict,stopwords,term_counts)
 
-    print(api.search(query_examples[20])[:5])
+    print(api.search(query_examples[10])[:5])
+    print(api.search(query_examples[11])[:6])
