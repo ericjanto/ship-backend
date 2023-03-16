@@ -39,10 +39,10 @@ class SearchEngineAPIClient:
         return response.json()
     
 if __name__ == '__main__':
-    client = SearchEngineAPIClient('localhost', 5005)
+    client = SearchEngineAPIClient('localhost', 5000)
     # Fix proximity queries:
     print(client.query('"harry potter"',[], {}))
 
     # Fix filtering:
-    print(client.query("harry",[], {'singleChapter': True})[6])
-    print(client.query("harry",[], {'singleChapter': False})[6])
+    print(client.query("harry",[], {'singleChapter': True})[:7])
+    print(client.query("harry",[], {'singleChapter': False})[:7])

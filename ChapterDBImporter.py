@@ -76,9 +76,58 @@ class ChapterDBImporter:
         
         TermCountsExporter.saveToFile(os.path.join("./data/", "termCounts.bin"), self.termCounter.termCounts)
 
-    def importTermCountsAndDocTerms(self, outputPath: str, chaptersPerChunk: int = 50000, chunkLimit: int = None, verbose=False) -> None:
+    def importTermCounts(self, outputPath: str, chaptersPerChunk: int = 50000, chunkLimit: int = None, verbose=False) -> None:
 
-        print(f"Importing term counts and pre stemmed doc terms for {chunkLimit} chunks")
+        print(f"Importing term counts for {chunkLimit} chunks")
+
+        if not os.path.exists(outputPath):
+            os.makedirs(outputPath)
+
+        chunkNo = 0
+        chaptersInCurrentChunk = 0
+
+        #uniquePreStemmedTerms = set()
+
+        self.cursor.execute(self.query)  # Assuming this doesn't cause RAM issues, ie, doesn't load everything
+
+        for i, row in enumerate(self.cursor):
+
+            if chunkLimit and chunkNo >= chunkLimit:
+                break
+
+            if verbose and i % 1000 == 0:
+                print(f"Preprocessed and indexed {i} chapters")
+
+            docID = row[0]
+            chapter = row[1]
+            # This is a hacky solution to save time preprocessing each document twice
+            self.termCounter.countTermsRowWise(chapter, docID)
+            #preprocessedChapter = self.preprocessor.preprocessDocument(chapter, removeStopWords=True, stem=False)
+
+            # for term in preprocessedChapter:
+            #     uniquePreStemmedTerms.add(term)
+            chaptersInCurrentChunk += 1
+
+            if chaptersInCurrentChunk >= chaptersPerChunk:
+
+                chunkNo += 1
+                chaptersInCurrentChunk = 0
+
+                print(f"Processed {chunkNo} chunks")
+
+        print("Exporting term counts")
+
+        TermCountsExporter.saveToFile(os.path.join("./data/", "termCountsFull.bin"), self.termCounter.termCounts)
+
+        # print("Exporting doc-terms")
+        #
+        # docTermsOutputPath = os.path.join("./data/", "doc-terms-full.pickle")
+        # with open(docTermsOutputPath, "wb") as f:
+        #     pickle.dump(uniquePreStemmedTerms, f)
+
+    def importDocTerms(self, outputPath: str, chaptersPerChunk: int = 50000, chunkLimit: int = None, verbose=False) -> None:
+        print(f"importing pre stemmed terms for {chunkLimit} chunks")
+
 
         if not os.path.exists(outputPath):
             os.makedirs(outputPath)
@@ -95,12 +144,11 @@ class ChapterDBImporter:
             if chunkLimit and chunkNo >= chunkLimit:
                 break
 
-            if verbose and i % 10000 == 0:
-                print(f"Preprocessed and indexed {i / 1000000} million chapters")
+            if verbose and i % 1000 == 0:
+                print(f"Preprocessed and indexed {i} chapters")
 
             docID = row[0]
             chapter = row[1]
-            self.termCounter.countTermsRowWise(chapter, docID)
             preprocessedChapter = self.preprocessor.preprocessDocument(chapter, removeStopWords=True, stem=False)
 
             for term in preprocessedChapter:
@@ -108,13 +156,23 @@ class ChapterDBImporter:
             chaptersInCurrentChunk += 1
 
             if chaptersInCurrentChunk >= chaptersPerChunk:
-
                 chunkNo += 1
                 chaptersInCurrentChunk = 0
 
                 print(f"Processed {chunkNo} chunks")
 
-        TermCountsExporter.saveToFile(os.path.join("./data/", "termCountsFull.bin"), self.termCounter.termCounts)
+            # Safety feature: rely on heap's law to ensure we at least
+            # have something for our wildcard tree
+            if i > 0 and i % 10000 == 0:
+                docTermsOutputPath = os.path.join("./data/", "doc-terms-full.pickle")
+                with open(docTermsOutputPath, "wb") as f:
+                    pickle.dump(uniquePreStemmedTerms, f)
+
+        # print("Exporting term counts")
+        #
+        # TermCountsExporter.saveToFile(os.path.join("./data/", "termCountsFull.bin"), self.termCounter.termCounts)
+        #
+        print("Exporting doc-terms")
 
         docTermsOutputPath = os.path.join("./data/", "doc-terms-full.pickle")
         with open(docTermsOutputPath, "wb") as f:
@@ -201,13 +259,20 @@ if __name__ == "__main__":
     LEFT JOIN Authors auth ON al.authorId = auth.id
     GROUP BY docID;
     """
+
+    EMERGENCY_QUERY = """
+    SELECT (chp.storyID*1000+chp.idx) AS docID, chp.text
+    FROM Chapters chp;
+    """
+
     QUERY_FOR_WHEN_CHAPTERSWITHSTORYINFO_EXISTS = "SELECT docID, text FROM ChaptersWithStoryInfo;"
 
     # Update the paths in the following two lines: the first is where you read the db from
     # the second where to write the chunks to.
-    dbIdx = ChapterDBImporter(r"../ao3_dump/organizedData.sqlite3", QUERY)
+    dbIdx = ChapterDBImporter(r"../ao3_dump/organizedData.sqlite3", EMERGENCY_QUERY)
     # dbIdx.importChaptersToIndex("./data/compressed-chapter-indexes/", 25000, limit=10000000, verbose=True)
-    dbIdx.importTermCountsAndDocTerms("./data/compressed-chapter-indexes", 25000, chunkLimit=35, verbose=True)
+    dbIdx.importTermCounts("./data/compressed-chapter-indexes", 25000, chunkLimit=35, verbose=True)
+    dbIdx.importDocTerms(".data/compressed-chapter-indexes", 25000, chunkLimit=35, verbose=True)
 
     #index = PositionalInvertedIndexLoader.loadFromMultipleCompressedFiles("./data/compressed-chapter-indexes/", chunk_limit=50, verbose=True)
 
