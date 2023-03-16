@@ -41,20 +41,20 @@ def docID_2_document(docIDs):
     global index
     global metadataIndex
 
-    all_meta_data = metadataIndex.getStoryDescriptors([id//1000 for id in docIDs])
-    all_story_excerpt = metadataIndex.getDescription([id//1000 for id in docIDs])
+    all_meta_data = metadataIndex.getStoryDescriptors([int(id)//1000 for id in docIDs])
+    all_story_excerpt = metadataIndex.getDescription([int(id)//1000 for id in docIDs])
     documents = []
     for docID in docIDs:
         document = {'docId': 0, 
                 'url': '', 
                 'title': '', 
                 'excerpt': ''}
-        story_id = docID // 1000
-        chapter_no = docID % 1000 + 1
+        story_id = int(docID) // 1000
+        chapter_no = int(docID) % 1000 + 1
         document['docId'] = story_id
         document['url'] = f'{base_url}works/{story_id}/chapters/{chapter_no}'
-        story_meta_dat = all_meta_data.get(str(docID//1000))
-        story_excerpt = all_story_excerpt.get(str(docID//1000),'')
+        story_meta_dat = all_meta_data.get(str(int(docID)//1000))
+        story_excerpt = all_story_excerpt.get(str(int(docID)//1000),'')
         if story_meta_dat:
             title = story_meta_dat.get('title')
         else:
