@@ -95,7 +95,7 @@ async def mergeWithOtherIndex(request: Request):
     dateFileNames = await request.body()
     dateFileNames = json.loads(dateFileNames, parse_int=int)["dateFileNames"]
     for dateFileName in dateFileNames:
-        path = "./data/" + dateFileName
+        path = "./data/WebScraperImports/WebScraped-Chapters/" + dateFileName
         if os.path.exists(path):
             index.mergeWithOtherIndex(PositionalInvertedIndexLoader.loadFromCompressedFile(path))
     return JSONResponse(content="Done Merging!", status_code=200)
@@ -103,10 +103,10 @@ async def mergeWithOtherIndex(request: Request):
 @app.put("/mergeWithOtherIndexAllDates")
 async def mergeWithOtherIndexAllDates():
     global index
-    path = "./data/"
-    # list all files in the directory
-    for files in os.listdir(path):
-        index.mergeWithOtherIndex(PositionalInvertedIndexLoader.loadFromCompressedFile(path + files))
+    path = "./data/WebScraperImports/WebScraped-Chapters/"
+    # path = "./data/compressed-chapter-indexes/"
+    indexToMerge = PositionalInvertedIndexLoader.loadFromMultipleCompressedFiles(path)
+    index.mergeWithOtherIndex(indexToMerge)
     return JSONResponse(content="Done Merging!", status_code=200)
     
 if __name__ == '__main__':

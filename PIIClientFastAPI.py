@@ -68,7 +68,8 @@ if __name__ == '__main__':
     print("6.",client2.getPostingList([('appl', 247000), ('banan', 247000)]))
     print("7.",client.tfidf([('appl', 247000), ('appl', 247000)]))
     print("8.",client2.getNumDocs())
-    print("9.", client.mergeWithOtherIndex(['compressed-chapter-indexes/chapterIndex-part-1.bin']))
+    # print("9.", client.mergeWithOtherIndex(['compressed-chapter-indexes/chapterIndex-part-1.bin']))
+    print("10.", client.mergeWithOtherIndexAllDates())
     print("8.",client.getNumDocs())
     # print("9.",client.getDocIDs())
    
