@@ -123,7 +123,7 @@ if __name__ == '__main__':
     indexFile = sys.argv[3]
     print("IndexFile:", indexFile)
     if len(sys.argv) == 5:
-        fullScale = True if sys.argv[5].lower().startswith("y") else False
+        fullScale = True if sys.argv[4].lower().startswith("y") else False
     else:
         fullScale = False
     print("Loading full index:", fullScale)
