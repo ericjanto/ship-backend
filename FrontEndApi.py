@@ -65,14 +65,14 @@ class QueryParameters(BaseModel):
     # language: Optional[str] = None
     wordCountFrom: Optional[Union[str, int]] = None
     wordCountTo: Optional[Union[str, int]] = None
-    hitsCountFrom: Optional[Union[str, int]] = None
-    hitsCountTo: Optional[Union[str, int]] = None
+    hitCountFrom: Optional[Union[str, int]] = None
+    hitCountTo: Optional[Union[str, int]] = None
     kudosCountFrom: Optional[Union[str, int]] = None
     kudosCountTo: Optional[Union[str, int]] = None
-    commentsCountFrom: Optional[Union[str, int]] = None
-    commentsCountTo: Optional[Union[str, int]] = None
-    bookmarksCountFrom: Optional[Union[str, int]] = None
-    bookmarksCountTo: Optional[Union[str, int]] = None
+    commentCountFrom: Optional[Union[str, int]] = None
+    commentCountTo: Optional[Union[str, int]] = None
+    bookmarkCountFrom: Optional[Union[str, int]] = None
+    bookmarkCountTo: Optional[Union[str, int]] = None
     lastUpdatedFrom: Optional[str] = None
     lastUpdatedTo: Optional[str] = None
 
@@ -92,7 +92,10 @@ async def read_query(request: Request):
     filter_params = {}
     for key, value in query_parameters.dict().items():
         if value and key not in ['q', 'p', 'l', 'tags']:
-            filter_params[key] = value
+            if key in ['lastUpdatedFrom', 'lastUpdatedTo', 'singleChapter', 'completionStatus']:
+                filter_params[key] = value
+            else:
+                filter_params[key] = int(value)
 
     query = str(query_parameters.q)
     page = query_parameters.p
@@ -103,8 +106,8 @@ async def read_query(request: Request):
     print(filter_params)
 
     # results_query = await cached_search(query_parameters.q, tags, {'kudosCountFrom', 300})
-    results_query = search_engine_client.query("harry", [], {'kudosCountFrom': 300})
-    # results_query = search_engine_client.query(query, tags, filter_params)
+    # results_query = search_engine_client.query("harry", [], {'kudosCountFrom': 300})
+    results_query = search_engine_client.query(query, tags, filter_params)
     # print(str(query) == "harry potter")
     # results_query = search_engine_client.query('"harry potter"', [], {})
 
