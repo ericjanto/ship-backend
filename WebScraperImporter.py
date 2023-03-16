@@ -24,6 +24,20 @@ class WebScraperImporter:
 
     def convertWebScrapeDumpsToIndexChunks(self, pathToChaptersJSON: str, pathToMetadataJSON: str, outputPath: str, dateStr: str) -> None:
 
+        CHAPTER_OUTPUT_PATH = os.path.join(outputPath, "WebScraped-Chapters")
+        TAG_OUTPUT_PATH = os.path.join(outputPath, "WebScraped-Tags")
+        METADATA_OUTPUT_PATH = os.path.join(outputPath, "WebScraped-Metadata")
+        TERMCOUNT_OUTPUT_PATH = os.path.join(outputPath, "WebScraped-TermCounts")
+
+        if not os.path.exists(CHAPTER_OUTPUT_PATH):
+            os.makedirs(CHAPTER_OUTPUT_PATH)
+        if not os.path.exists(TAG_OUTPUT_PATH):
+            os.makedirs(TAG_OUTPUT_PATH)
+        if not os.path.exists(METADATA_OUTPUT_PATH):
+            os.makedirs(METADATA_OUTPUT_PATH)
+        if not os.path.exists(TERMCOUNT_OUTPUT_PATH):
+            os.makedirs(TERMCOUNT_OUTPUT_PATH)
+
         chaptersJSON = self.loadJSONFile(pathToChaptersJSON)
         metadataJSON = self.loadJSONFile(pathToMetadataJSON)
 
@@ -122,25 +136,25 @@ class WebScraperImporter:
 
         PositionalInvertedExporter.saveToCompressedIndex(chaptersIndex,
                                                               os.path.join(
-                                                                  outputPath,
+                                                                  CHAPTER_OUTPUT_PATH,
                                                                   f"chapters-{dateStr}.bin"
                                                               ))
 
         TagPositionalInvertedIndexExporter.saveToCompressedIndex(tagsIndex,
                                                                  os.path.join(
-                                                                     outputPath,
+                                                                     TAG_OUTPUT_PATH,
                                                                      f"tags-{dateStr}.bin"
                                                                  ))
 
         StoryMetadataExporter.saveToCompressedIndex(metadataIndex,
                                                     os.path.join(
-                                                        outputPath,
+                                                        METADATA_OUTPUT_PATH,
                                                         f"metadata-{dateStr}.bin"
                                                     ))
 
         TermCountsExporter.saveToFile(
             os.path.join(
-                outputPath,
+                TERMCOUNT_OUTPUT_PATH,
                 f"termCounts-{dateStr}.bin"
             ),
             termCounts.termCounts
@@ -157,5 +171,5 @@ if __name__ == "__main__":
 
     importer.convertWebScrapeDumpsToIndexChunks("data/chapters2023-03-13.json",
                                                 "data/metaData2023-03-13.json",
-                                                "data/",
+                                                "data/WebScraperImports/",
                                                 "2023-03-14")
