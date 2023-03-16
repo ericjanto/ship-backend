@@ -572,8 +572,9 @@ class BooleanSearchEngine():
     def termsOccurWithinProximityInDocument(self, terms, docID, proximityThreshold):
         instances = []
         # Build positional list
+        batched_posting_lists = self.index.getPostingList([(term,docID) for term in terms])
         for term in terms:
-            for pos in self.index.getPostingList([(term,docID)])[term][docID]:
+            for pos in batched_posting_lists.get(term,{}).get(str(docID),[]):
                 instances.append((term, pos))
         instances = sorted(instances, key=lambda x: x[1])
 
@@ -592,7 +593,7 @@ class BooleanSearchEngine():
                     continue
                 # Assumption: difference between first and last term positions
                 #             must be no more than the proximity threshold
-                if otherPos - pos > proximityThreshold:
+                if abs(otherPos - pos) > proximityThreshold:
                     break
                 termsWithinProximity.add(otherTerm)
                 if len(termsWithinProximity) == len(terms):

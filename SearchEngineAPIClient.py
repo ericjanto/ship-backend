@@ -41,6 +41,7 @@ class SearchEngineAPIClient:
 if __name__ == '__main__':
     client = SearchEngineAPIClient('localhost', 5000)
     # Fix caching:
-    print(len(client.query("harry",[], {})))
+    print(len(client.query("\"harry potter\"",[], {})))
     print(client.query("harry",[], {'singleChapter': True, 'kudosCountFrom': 1000}))
-    print(len(client.query("harry",[], {})))
+    print(len(client.query("Who what who were AND (what OR (where AND are you))",[],{})))
+    print(len(client.query("#15(harry,potter)",[], {})))
