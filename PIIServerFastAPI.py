@@ -12,7 +12,12 @@ index = None
 async def startup_event():
     global index
     global indexFile
-    index = PositionalInvertedIndexLoader.loadFromCompressedFile(indexFile)
+    global fullScale
+    if fullScale:
+        index = PositionalInvertedIndexLoader.loadFromMultipleCompressedFiles(indexFile, chunk_limit=30, verbose=True)
+    else:
+        index = PositionalInvertedIndexLoader.loadFromCompressedFile(indexFile)
+
     print("Index loaded")
 
 @app.get("/getDistinctTermsCount")
@@ -85,9 +90,10 @@ async def getDocIDs(request: Request):
 
     
 if __name__ == '__main__':
+    global fullScale
     global indexFile
-    if len(sys.argv) != 4:
-        print("Usage: python3 PIIServerFastAPI.py <ip> <port> <index file>")
+    if len(sys.argv) != 4 and len(sys.argv) != 5:
+        print("Usage: python3 PIIServerFastAPI.py <ip> <port> <index file> <full scale mode (y/n)>")
         sys.exit(1)
 
     ip = sys.argv[1]
@@ -96,5 +102,10 @@ if __name__ == '__main__':
     print("Port:", port)
     indexFile = sys.argv[3]
     print("IndexFile:", indexFile)
+    if len(sys.argv) == 5:
+        fullScale = True if sys.argv[5].lower().startswith("y") else False
+    else:
+        fullScale = False
+    print("Loading full index:", fullScale)
 
     uvicorn.run(app, host=ip, port=port)
