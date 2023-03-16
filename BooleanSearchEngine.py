@@ -266,7 +266,7 @@ class BooleanSearchEngine():
             # Convert terms into posting lists
             posting_terms_idxs = [term for term in query if self.isSymbolTerm(term)]
             postings = self.findDocumentsTermOccursIn(posting_terms_idxs)
-            query = [postings.get(term,term) if term != [] else term for term in query]
+            query = [postings.get(term,term) if self.isSymbolTerm(term) else term for term in query]
             # Step 6: Handle the NOT cases
             i = 0
             newQuery = []

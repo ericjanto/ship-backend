@@ -66,7 +66,6 @@ class Search_Engine():
         query_filters = filter_dict
         for key in kwargs:
             query_filters[key] = kwargs[key]
-
         if self.queryCache.exists(query):
             return self.queryCache.get(query)
         else:
@@ -93,7 +92,6 @@ class Search_Engine():
             all_doc_IDs = doc_IDs.union(tag_docIDs)
             all_doc_IDs = self.apply_filters(all_doc_IDs,query_filters)
             doc_score_pairs = dict.fromkeys(all_doc_IDs,0)
-            print(terms)
             query_scores = self.ranker.score_documents(terms,all_doc_IDs)
             for docID,score in query_scores:
                 doc_score_pairs[docID] += score
@@ -135,49 +133,49 @@ class Search_Engine():
                     query_str = ' OR '.join([f"\"{' '.join(quote)}\"" for quote in quotes])
                 else:
                     query_str = ' OR '.join(or_str)
-                results = set(self.boolean_engine.makeQuery(query_str))
+                results = set(self.boolean_engine.makeQuery(query_str,debugVerbose=False))
             return tag_results if tag_results else results
     
     def apply_filters(self, docIDs, filter_params):
         range_fields = ['wordCount','hitCount','kudosCount',
                         'commentCount','bookmarkCount','lastUpdated']
         filtered_storyIDs = []
-        storyIDs = [docID//1000 for docID in list(docIDs)]
+        storyIDs = [int(docID)//1000 for docID in list(docIDs)]
         story_descs = self.metadataDict.getStoryDescriptors(storyIDs)
         story_stats = self.metadataDict.getStats(storyIDs)
         story_language = self.metadataDict.getLanguage(storyIDs)
+        storyIDs = [str(docID) for docID in storyIDs]
 
         for docID,storyID in zip(docIDs,storyIDs):
-            if (not story_descs.get(str(storyID))) or (not story_stats.get(str(storyID))) or (not story_language.get(str(storyID))):
+            if (not story_descs.get(storyID)) or (not story_stats.get(storyID)) or (not story_language.get(storyID)):
                 continue
             isSingle = filter_params['singleChapter']
             status = filter_params['completionStatus']
             language = filter_params['language']
 
-            chapterCountMatch = (
-                                not isSingle
-                                ) or (
-                                isSingle and story_descs[str(storyID)]['finalChapterCountKnown'] and story_descs[str(storyID)]['finalChapterCount'] == 1
-                                ) or (
-                                isSingle and (not story_descs[str(storyID)]['finalChapterCountKnown']) and story_descs[str(storyID)]['currentChapterCount'] == 1
-                                )
-            if not chapterCountMatch:
-                continue
+            if isSingle:
+                chapterCountMatch = (
+                                    isSingle and story_descs[storyID]['finalChapterCountKnown'] and story_descs[storyID]['finalChapterCount'] == 1
+                                    ) or (
+                                    isSingle and (not story_descs[storyID]['finalChapterCountKnown']) and story_descs[storyID]['currentChapterCount'] == 1
+                                    )
+                if not chapterCountMatch:
+                    continue
             completionStatusMatch = (
                                     status == "all"
                                     ) or (
-                                    status == "completed" and story_descs[str(storyID)]['finished']
+                                    status == "completed" and story_descs[storyID]['finished']
                                     ) or (
-                                    status == "in-progress" and not story_descs[str(storyID)]['finished']
+                                    status == "in-progress" and not story_descs[storyID]['finished']
                                     )
             if not completionStatusMatch:
                 continue
-            languageMatch = story_language[str(storyID)] == language
+            languageMatch = story_language[storyID] == language
             if not languageMatch:
                 continue
 
             for field in range_fields:
-                param = story_stats[str(storyID)]
+                param = story_stats[storyID]
                 lowerBound = filter_params[field+'From']
                 upperBound = filter_params[field+'To']
                 flag = self.parameterWithinBoundary(param,lowerBound,upperBound)
