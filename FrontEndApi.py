@@ -10,7 +10,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 from AO3_SearchEngine import Search_Engine
 from SearchEngineAPIClient import SearchEngineAPIClient
@@ -32,6 +32,9 @@ app = FastAPI()
 
 origins = [
     "http://localhost:3002",
+    "http://localhost:3003",
+    "http://localhost:3004",
+    "http://localhost:3005",
     "https://search.storyhunter.live"
     "localhost"
 ]
@@ -57,35 +60,37 @@ class QueryParameters(BaseModel):
     tags: Optional[str] = None
 
     # valid filter params:
-    singleChapter: Optional[bool] = None
+    singleChapter: Optional[Union[bool, str]] = None
     completionStatus: Optional[str] = None
     # language: Optional[str] = None
-    wordCountFrom: Optional[int] = None
-    wordCountTo: Optional[int] = None
-    hitsCountFrom: Optional[int] = None
-    hitsCountTo: Optional[int] = None
-    kudosCountTo: Optional[int] = None
-    kudosCountTo: Optional[int] = None
-    commentsCountTo: Optional[int] = None
-    commentsCountTo: Optional[int] = None
-    bookmarksCountTo: Optional[int] = None
-    bookmarksCountTo: Optional[int] = None
+    wordCountFrom: Optional[Union[str, int]] = None
+    wordCountTo: Optional[Union[str, int]] = None
+    hitsCountFrom: Optional[Union[str, int]] = None
+    hitsCountTo: Optional[Union[str, int]] = None
+    kudosCountFrom: Optional[Union[str, int]] = None
+    kudosCountTo: Optional[Union[str, int]] = None
+    commentsCountFrom: Optional[Union[str, int]] = None
+    commentsCountTo: Optional[Union[str, int]] = None
+    bookmarksCountFrom: Optional[Union[str, int]] = None
+    bookmarksCountTo: Optional[Union[str, int]] = None
     lastUpdatedFrom: Optional[str] = None
     lastUpdatedTo: Optional[str] = None
 
 
 @app.get("/query")
 async def read_query(request: Request):
+    print(dict(request.query_params))
     query_parameters = QueryParameters(**dict(request.query_params))
-
 
     if query_parameters.tags:
         tags = [t for t in query_parameters.tags.split(',') if t]
     else:
         tags = []
 
+    print(query_parameters.dict().items())
+
     filter_params = {}
-    for key, value in query_parameters.__dict__.items():
+    for key, value in query_parameters.dict().items():
         if value and key not in ['q', 'p', 'l', 'tags']:
             filter_params[key] = value
 
@@ -93,14 +98,15 @@ async def read_query(request: Request):
     page = query_parameters.p
     limit = query_parameters.l
     
-    print(str(query))
+    print(query)
     print(tags)
     print(filter_params)
 
-    # results_query = await cached_search(query_parameters.q, tags, filter_params)
+    # results_query = await cached_search(query_parameters.q, tags, {'kudosCountFrom', 300})
+    results_query = search_engine_client.query("harry", [], {'kudosCountFrom': 300})
     # results_query = search_engine_client.query(query, tags, filter_params)
-    print(str(query) == "harry potter")
-    results_query = search_engine_client.query('"harry potter"', [], {})
+    # print(str(query) == "harry potter")
+    # results_query = search_engine_client.query('"harry potter"', [], {})
 
     end = page * limit
     start = end - limit
