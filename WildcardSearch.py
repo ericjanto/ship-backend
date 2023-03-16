@@ -93,13 +93,17 @@ def get_all_dollar_terms(term):
 def create_permuterm_index_trie(terms, verbose=True):
     permuterm_index = trieNode()
     total_terms = len(terms)
+    skipped_terms = 0
     for i, term in enumerate(terms):
+        if len(term) > 50:
+            skipped_terms += 1
+            continue
         dollar_terms = get_all_dollar_terms(term)
         for dt in dollar_terms:
             permuterm_index.add_term(dt, term)
 
         if verbose and i > 0 and i % 10000 == 0:
-            print(f"Imported {i} terms out of {total_terms}")
+            print(f"Imported {i} terms out of {total_terms} (Skipped {skipped_terms} long terms")
 
     return permuterm_index 
 
