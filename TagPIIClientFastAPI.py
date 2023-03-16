@@ -39,4 +39,5 @@ if __name__ == '__main__':
     tag_results = client.getStoryIDsWithTag(['anime', 'manga'])
     print(set(tag_results['anime']).intersection(set(tag_results['manga'])))
     print(client.getTagFrequency(['marvel', 'magic']))
-    print(client.mergeWithOtherIndex(['compressedTagIndexFull.bin']))
+    print(client.get_ranked_autocomplete([('angst',2)]))
+    # print(client.mergeWithOtherIndex(['compressedTagIndexFull.bin']))

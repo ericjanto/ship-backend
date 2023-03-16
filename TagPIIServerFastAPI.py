@@ -1,5 +1,3 @@
-### Similar to PIIServer-FastAPI.py, but with tags using the TagPositionalInvvertedIndex class
-
 import sys
 import json
 from fastapi import FastAPI, Request
@@ -7,6 +5,7 @@ from fastapi.responses import JSONResponse
 from TagPositionalInvertedIndexLoader import TagPositionalInvertedIndexLoader
 import uvicorn
 import os
+from Autocompleter import Autocompleter
 
 app = FastAPI()
 index = None
@@ -36,14 +35,15 @@ async def getStoryIDsWithTag(request: Request):
     return JSONResponse(content=response, status_code=200)
 
 @app.post("/autocomplete")
-def get_ranked_autocomplete(self, request:Request):
-    pairs = request.body()
+async def get_ranked_autocomplete(request:Request):
+    global autocompleter
+    pairs = await request.body()
     pairs = json.loads(pairs)["pairs"]
     results = {}
     for prefix, n in pairs:
         if prefix not in results:
             results[prefix] = {}
-        results[prefix][n] = self.autocompleter.autocomplete(prefix, n)
+        results[prefix][n] = autocompleter.get_ranked_autocomplete(prefix, n)
     return JSONResponse(content=results, status_code=200)
 
 
