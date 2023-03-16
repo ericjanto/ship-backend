@@ -28,7 +28,7 @@ def test(request: Request):
 
 @app.post("/getStoryIDsWithTag")
 async def getStoryIDsWithTag(request: Request):
-    tags = await request.body`()
+    tags = await request.body()
     tags = json.loads(tags)["tags"]
     response = {}
     for tag in tags:
@@ -36,7 +36,7 @@ async def getStoryIDsWithTag(request: Request):
     return JSONResponse(content=response, status_code=200)
 
 @app.post("/autocomplete")
-def get_ranked_autocomplete(self, rrequest:Request):
+def get_ranked_autocomplete(self, request:Request):
     pairs = request.body()
     pairs = json.loads(pairs)["pairs"]
     results = {}
