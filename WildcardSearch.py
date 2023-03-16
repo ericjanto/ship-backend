@@ -90,12 +90,16 @@ def get_all_dollar_terms(term):
 
     return answer
 
-def create_permuterm_index_trie(terms):
+def create_permuterm_index_trie(terms, verbose=True):
     permuterm_index = trieNode()
-    for term in terms:
+    total_terms = len(terms)
+    for i, term in enumerate(terms):
         dollar_terms = get_all_dollar_terms(term)
         for dt in dollar_terms:
-            permuterm_index.add_term(dt, term) 
+            permuterm_index.add_term(dt, term)
+
+        if verbose and i > 0 and i % 10000 == 0:
+            print(f"Imported {i} terms out of {total_terms}")
 
     return permuterm_index 
 
