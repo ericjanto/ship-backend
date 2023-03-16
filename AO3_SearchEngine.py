@@ -60,6 +60,7 @@ class Search_Engine():
         total_term_counts = sum(self.termcounts.get_tokens_before_stemming(all_docIDs).values())
         self.avg_doc_len = total_term_counts/len(all_docIDs)
         self.tag_regex = re.compile(r'TAG{ *\w+ *}')
+        self.proximity_regex = re.compile(r'#\d+\s*\(\s*\w+(\s*,\s*\w+\s*)*\)')
     
     def search(self,query,**kwargs):
         assert self.check_args(kwargs)
@@ -74,12 +75,19 @@ class Search_Engine():
             query_filters[key] = kwargs[key]
 
         original_query = query
-        query = query.replace('(',' ( ')
-        query = query.replace(')',' ) ')
         query = query.replace('"',' " ')
         query = query.replace('TAG{','TAG{ ')
         query = query.replace('}',' }')
         tokens = query.split()
+        new_tokens = []
+        for token in tokens:
+            if not self.proximity_regex.search(token):
+                token = token.replace('(', ' ( ')
+                token = token.replace(')', ' ) ')
+                new_tokens += token.split()
+            else:
+                new_tokens.append(token)
+        tokens = new_tokens
 
         if not self.queryCache.exists(original_query):
             doc_IDs = self.recur_connectives(tokens)
@@ -103,7 +111,7 @@ class Search_Engine():
         return final_results
 
     def recur_connectives(self,subquery):
-        split_query = self.bracketed_split(subquery,CONNECTIVES,strip_brackets=False)
+        split_query = self.bracketed_split(subquery,CONNECTIVES,strip_brackets=True)
         if 'AND' in split_query or 'and' in split_query:
             token_1 = self.recur_connectives(split_query[0])
             token_2 = self.recur_connectives(split_query[-1])
@@ -136,7 +144,7 @@ class Search_Engine():
                 else:
                     query_str = ' OR '.join(or_str)
                 results = set(self.boolean_engine.makeQuery(query_str,debugVerbose=False))
-            return tag_results if tag_results else results
+            return tag_results if tags else results
     
     def apply_filters(self, docIDs, filter_params):
         range_fields = ['wordCount','hitCount','kudosCount',
