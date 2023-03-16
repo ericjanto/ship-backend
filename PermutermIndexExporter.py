@@ -21,5 +21,5 @@ class PermutermIndexExporter:
 
 if __name__=='__main__':
     exporter = PermutermIndexExporter()
-    permutermIndex = exporter.buildIndex("./data/doc-terms-full.pickle")
+    permutermIndex = exporter.buildIndex("./data/filtered-doc-terms-full.pickle")
     exporter.saveToFile("data/permuterm-index-full.bz2", permutermIndex)

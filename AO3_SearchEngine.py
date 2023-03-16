@@ -63,29 +63,35 @@ class Search_Engine():
     
     def search(self,query,**kwargs):
         assert self.check_args(kwargs)
-        query_filters = filter_dict
+        query_filters = {'singleChapter':False, 'completionStatus':'all', 'language':1, 
+                'wordCountFrom':-1, 'wordCountTo':-1, 
+                'hitCountFrom':-1, 'hitCountTo':-1, 
+                'kudosCountFrom':-1, 'kudosCountTo':-1, 
+                'commentCountFrom':-1, 'commentCountTo':-1, 
+                'bookmarkCountFrom':-1, 'bookmarkCountTo':-1, 
+                'lastUpdatedFrom':-1, 'lastUpdatedTo':-1}
         for key in kwargs:
             query_filters[key] = kwargs[key]
 
         original_query = query
+        query = query.replace('(',' ( ')
+        query = query.replace(')',' ) ')
+        query = query.replace('"',' " ')
+        query = query.replace('TAG{','TAG{ ')
+        query = query.replace('}',' }')
+        tokens = query.split()
 
         if not self.queryCache.exists(original_query):
-            query = query.replace('(',' ( ')
-            query = query.replace(')',' ) ')
-            query = query.replace('"',' " ')
-            query = query.replace('TAG{','TAG{ ')
-            query = query.replace('}',' }')
-            tokens = query.split()
             doc_IDs = self.recur_connectives(tokens)
-            tokens = self.tag_regex.sub('',query).split()
-            tokens = [token for token in tokens if '*' not in token]
-            query = ' '.join(tokens)
-            tag_docIDs = set() #self.tag_search(terms)
-            all_doc_IDs = doc_IDs.union(tag_docIDs)
-            self.queryCache.push(original_query,all_doc_IDs)
+            self.queryCache.push(original_query,doc_IDs)
         else:
-            all_doc_IDs = self.queryCache.get(original_query)
+            doc_IDs = self.queryCache.get(original_query)
         
+        tokens = self.tag_regex.sub('',query).split()
+        tokens = [token for token in tokens if '*' not in token]
+        query = ' '.join(tokens)
+        tag_docIDs = set()
+        all_doc_IDs = doc_IDs.union(tag_docIDs)
         terms = self.ranker.preprocess_query(query)    
         all_doc_IDs = self.apply_filters(all_doc_IDs,query_filters)
         doc_score_pairs = dict.fromkeys(all_doc_IDs,0)
@@ -178,7 +184,6 @@ class Search_Engine():
                 if param>=0:
                     flag = self.parameterWithinBoundary(param,lowerBound,upperBound)
                 if not flag:
-                    #print(lowerBound,param,upperBound,flag)
                     break
 
             if not flag:

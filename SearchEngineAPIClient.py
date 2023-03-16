@@ -39,7 +39,7 @@ class SearchEngineAPIClient:
         return response.json()
     
 if __name__ == '__main__':
-    client = SearchEngineAPIClient('localhost', 5005)
+    client = SearchEngineAPIClient('localhost', 5000)
     # Fix caching:
     print(len(client.query("harry",[], {})))
     print(client.query("harry",[], {'singleChapter': True, 'kudosCountFrom': 1000}))
