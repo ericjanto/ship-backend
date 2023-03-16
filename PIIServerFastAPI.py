@@ -4,6 +4,7 @@ from PositionalInvertedIndexLoader import PositionalInvertedIndexLoader
 import json
 import sys
 import uvicorn
+import os
 
 app = FastAPI()
 index = None
@@ -83,6 +84,25 @@ async def getDocIDs(request: Request):
     list_of_docIDs = list(index.getDocIDs()) # Since set is not serializable
     return JSONResponse(content=list_of_docIDs, status_code=200)
 
+@app.put("/mergeWithOtherIndex")
+async def mergeWithOtherIndex(request: Request):
+    global index
+    dateFileNames = await request.body()
+    dateFileNames = json.loads(dateFileNames, parse_int=int)["dateFileNames"]
+    for dateFileName in dateFileNames:
+        path = "./data/" + dateFileName
+        if os.path.exists(path):
+            index.mergeWithOtherIndex(PositionalInvertedIndexLoader.loadFromCompressedFile(path))
+    return JSONResponse(content="Done Merging!", status_code=200)
+
+@app.put("/mergeWithOtherIndexAllDates")
+async def mergeWithOtherIndexAllDates():
+    global index
+    path = "./data/"
+    # list all files in the directory
+    for files in os.listdir(path):
+        index.mergeWithOtherIndex(PositionalInvertedIndexLoader.loadFromCompressedFile(path + files))
+    return JSONResponse(content="Done Merging!", status_code=200)
     
 if __name__ == '__main__':
     global indexFile

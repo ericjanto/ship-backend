@@ -47,6 +47,15 @@ class PIIClientFlask:
     def getDocIDs(self):
         response = requests.get(f'http://{self.ip}:{self.port}/getDocIDs')
         return response.json()
+    
+    def mergeWithOtherIndexAllDates(self):
+        response = requests.put(f'http://{self.ip}:{self.port}/mergeWithOtherIndexAllDates')
+        return response.json()
+    
+    def mergeWithOtherIndex(self, dateFileNames):
+        data = {'dateFileNames': dateFileNames}
+        response = requests.put(f'http://{self.ip}:{self.port}/mergeWithOtherIndex', json=data)
+        return response.json()
 
 if __name__ == '__main__':
     client = PIIClientFlask('localhost', 5000)
@@ -59,5 +68,7 @@ if __name__ == '__main__':
     print("6.",client2.getPostingList([('appl', 247000), ('banan', 247000)]))
     print("7.",client.tfidf([('appl', 247000), ('appl', 247000)]))
     print("8.",client2.getNumDocs())
+    print("9.", client.mergeWithOtherIndex(['compressed-chapter-indexes/chapterIndex-part-1.bin']))
+    print("8.",client.getNumDocs())
     # print("9.",client.getDocIDs())
    
