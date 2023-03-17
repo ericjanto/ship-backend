@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.9
+#!/usr/bin/python3.9
 import time
 import schedule
 from webscrape import WebScraper

@@ -16,7 +16,7 @@ from Preprocessor import Preprocessor
 
 class WebScraperImporter:
 
-    def __init__(self, pathToStopwords: str = "englishStopWords.txt"):
+    def __init__(self, pathToStopwords: str = "./englishStopWords.txt"):
 
         self.stopwords = loadStopWordsIntoSet(pathToStopwords)
 

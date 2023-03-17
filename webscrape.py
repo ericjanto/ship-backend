@@ -1,3 +1,4 @@
+#!/usr/bin/python3.9
 import json
 from time import sleep
 from matplotlib.font_manager import json_dump
