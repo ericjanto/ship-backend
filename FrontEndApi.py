@@ -1,5 +1,3 @@
-import json
-import pickle
 import sys
 from pydantic import BaseModel
 import uvicorn
@@ -10,15 +8,9 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from typing import Dict, Optional, Union
+from typing import Optional, Union
 
-from AO3_SearchEngine import Search_Engine
 from SearchEngineAPIClient import SearchEngineAPIClient
-from indexDecompressor import IndexDecompressor
-from StoryMetadataLoader import StoryMetadataLoader
-from StoryMetadataRecord import StoryMetadataRecord
-from preprocessing import loadStopWordsIntoSet
-from WildcardSearch import create_permuterm_index_trie
 
 global search_engine_client
 
