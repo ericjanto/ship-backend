@@ -47,6 +47,15 @@ class TermCountsClient:
         data = {'termCounts': termCounts}
         response = requests.put(f'http://{self.ip}:{self.port}/appendIntoTermCounts', json=data)
         return response.json()
+    
+    def mergeWithOtherIndex(self, dateFileNames):
+        data = {'dateFileNames': dateFileNames}
+        response = requests.put(f'http://{self.ip}:{self.port}/mergeWithOtherIndex', json=data)
+        return response.json()
+
+    def mergeWithOtherIndexAllDates(self):
+        response = requests.put(f'http://{self.ip}:{self.port}/mergeWithOtherIndexAllDates')
+        return response.json()
 
 if __name__ == '__main__':
     tcClient = TermCountsClient('localhost', 5000)

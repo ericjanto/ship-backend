@@ -14,7 +14,6 @@ async def startup_event():
     global indexFile
     print(indexFile)
     index = TermCountsLoader.loadFromFile(indexFile)
-    
     print("Index loaded")
 
 @app.post("/getTokensBeforeProcessing")
@@ -82,6 +81,28 @@ async def appendIntoTermCounts(request: Request):
     for termCount in termCounts:
         index.append_into_term_counts(termCount)
     return JSONResponse(content="Appended!", status_code=200)
+
+@app.put("/mergeWithOtherIndex")
+async def mergeWithOtherIndex(request: Request):
+    global index
+    dateFileNames = await request.body()
+    dateFileNames = json.loads(dateFileNames, parse_int=int)["dateFileNames"]
+    for dateFileName in dateFileNames:
+        path = "./data/WebScraperImports/WebScraped-TermCounts/" + dateFileName
+        if os.path.exists(path):
+            tcIndex = TermCountsLoader.loadFromFile(path)
+            index.append_into_term_counts(tcIndex.index)
+    return JSONResponse(content="Done Merging!", status_code=200)
+
+@app.put("/mergeWithOtherIndexAllDates")
+async def mergeWithOtherIndexAllDates():
+    global index
+    path = "./data/WebScraperImports/WebScraped-TermCounts/"
+    # list all files in the directory
+    for fileName in os.listdir(path):
+        tcIndex = TermCountsLoader.loadFromFile(path+fileName)
+        index.append_into_term_counts(tcIndex.index)
+    return JSONResponse(content="Done Merging!", status_code=200)
 
 
 if __name__ == "__main__":
