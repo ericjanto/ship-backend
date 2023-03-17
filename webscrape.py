@@ -21,13 +21,19 @@ NoneType = type(None)
 class WebScraper():
 
     NoneType = type(None)
+    baseDir = "/home/riotshielder21/IR-backend/"
 
-    def __init__(self):
+    def __init__(self, esWords: str=""):
         self.piiClientFlask = PIIClientFlask('localhost', 5001)
         self.tagPIIClient = TagPIIClientFastAPI('localhost', 5002)
         self.termCountsClient = TermCountsClient('localhost', 5003)
         self.storyMetadataClient = StoryMetadataClient('localhost', 5004)
-        self.wsImporter = WebScraperImporter()
+
+        if esWords == "":
+            self.wsImporter = WebScraperImporter()
+        else:
+            self.wsImporter = WebScraperImporter(esWords)
+
         self.outputPath =  'data/WebScraperImports/'
         self.pathCH = 'WebScraped-Chapters/'
         self.pathMD =' WebScraped-Metadata/'

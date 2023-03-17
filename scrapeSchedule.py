@@ -1,10 +1,11 @@
-#!/usr/bin/python3.9
+#!/usr/bin/ python3.9
 import time
 import schedule
 from webscrape import WebScraper
 
+esWords = "/home/riotshielder21/IR-backend/englishStopWords.txt"
 ws = WebScraper()
-schedule.every().day.at("01:00").do(ws.scrape)
+schedule.every().day.at("01:00").do(ws.scrape, esWords)
 
 while True:
     schedule.run_pending()
