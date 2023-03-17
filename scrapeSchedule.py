@@ -1,9 +1,15 @@
+#!/usr/bin/env python3.9
 import time
-import datetime
-import TermCountsClient
-import StoryMetadataClient
-import PIIClientFlask
-import TagPIIClientFastAPI
+import schedule
+from webscrape import WebScraper
+
+ws = WebScraper()
+ws.scrape()
+schedule.every().day.at("01:00").do(ws.scrape)
+
+while True:
+    schedule.run_pending()
+    time.sleep(36000) # wait one hour
 
 
 # Schedule the script to run once a day at midnight
@@ -15,12 +21,9 @@ while True:
     if now.tm_hour == 1 and now.tm_min == 0:
 
         # Run the script once at startup
-        exec(open('./webscrape.py').read())
-        # get yesterday's date
-        yesterday_fmt = datetime.date.today() - datetime.timedelta(days=1)
+        ws.scrape()
+        ws.convertAndMerge()
 
-        # format the date as a string in the format YYYY-MM-DD
-        yesterday = yesterday_fmt.strftime('%Y-%m-%d')
         time.sleep(86400)
     # Otherwise, wait 10 minutes and check again
     else:
