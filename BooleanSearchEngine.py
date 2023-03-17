@@ -367,7 +367,11 @@ class BooleanSearchEngine():
     def isWildCard(self, symbol):
         return symbol == "*"
 
-    def isSymbolTerm(self, symbol):
+    def isSymbolTerm(self, symbol) -> bool:
+        """
+        A Symbol term is not an operator,
+        nor a posting list.
+        """
         if self.isSymbolPostingList(symbol):
             return False
         if symbol in ["AND", "OR", "NOT", "(", ")", "\"", ")#", "*"]:
