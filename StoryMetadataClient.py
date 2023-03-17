@@ -1,6 +1,7 @@
 import requests
 import json
 
+
 class StoryMetadataClient:
     def __init__(self, ip, port):
         self.ip = ip
@@ -66,3 +67,5 @@ if __name__ == '__main__':
     print("3.", smClient.getStats([79104,103637,51028,110078,78803,20392,44456]))
     print("4.", smClient.getLanguage([79104,103637,51028,110078,78803,20392,44456]))
     print("5.", smClient.getStoryDescriptors([79104,103637,51028,110078,78803,20392,44456]))
+    print("6.", smClient.mergeWithOtherIndex(['compressedMetadata.bin']))
+    

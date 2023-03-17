@@ -4,6 +4,7 @@ from TermCountsLoader import TermCountsLoader
 import json
 import sys
 import uvicorn
+import os
 
 app = FastAPI()
 index = None
@@ -89,6 +90,7 @@ async def mergeWithOtherIndex(request: Request):
     dateFileNames = json.loads(dateFileNames, parse_int=int)["dateFileNames"]
     for dateFileName in dateFileNames:
         path = "./data/WebScraperImports/WebScraped-TermCounts/" + dateFileName
+        # path = "./data/" + dateFileName
         if os.path.exists(path):
             tcIndex = TermCountsLoader.loadFromFile(path)
             index.append_into_term_counts(tcIndex.index)
