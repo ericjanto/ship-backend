@@ -45,7 +45,7 @@ class PrefixTree:
         current.is_tag = True
         current.freq = freq
 
-    def find(self, tag: str) -> TrieNode:
+    def find(self, tag: str):
         """
         Finds the TrieNode representing the given tag if it exists.
         Returns None if not found.
