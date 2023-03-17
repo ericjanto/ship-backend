@@ -72,7 +72,7 @@ class WebScraper():
         results = {}
 
         # Iterate over each page of stories
-        for page_num in range(1,2):#num_pages + 1):
+        for page_num in range(1, num_pages + 1):
 
             #url reset
             url2 = 'https://archiveofourown.org/tags/Harry%20Potter%20-%20J*d*%20K*d*%20Rowling/works?commit=Sort+and+Filter&page='+ str(page_num) +'&work_search%5Bcomplete%5D=&work_search%5Bcrossover%5D=&work_search%5Bdate_from%5D='+self.yesterday+'2&work_search%5Bdate_to%5D='+self.yesterday+'&work_search%5Bexcluded_tag_names%5D=&work_search%5Blanguage_id%5D=&work_search%5Bother_tag_names%5D=&work_search%5Bquery%5D=&work_search%5Bsort_column%5D=created_at&work_search%5Bwords_from%5D=&work_search%5Bwords_to%5D='

@@ -4,7 +4,6 @@ import schedule
 from webscrape import WebScraper
 
 ws = WebScraper()
-ws.scrape()
 schedule.every().day.at("01:00").do(ws.scrape)
 
 while True:
