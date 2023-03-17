@@ -1,5 +1,3 @@
-import json
-import pickle
 import sys
 from pydantic import BaseModel
 import uvicorn
@@ -10,15 +8,9 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from typing import Dict, Optional, Union
+from typing import Optional, Union
 
-from AO3_SearchEngine import Search_Engine
 from SearchEngineAPIClient import SearchEngineAPIClient
-from indexDecompressor import IndexDecompressor
-from StoryMetadataLoader import StoryMetadataLoader
-from StoryMetadataRecord import StoryMetadataRecord
-from preprocessing import loadStopWordsIntoSet
-from WildcardSearch import create_permuterm_index_trie
 
 global search_engine_client
 
@@ -31,6 +23,8 @@ app = FastAPI()
 # metadata = load_metadata()
 
 origins = [
+    "http://localhost:3000",
+    "http://localhost:3001",
     "http://localhost:3002",
     "http://localhost:3003",
     "http://localhost:3004",
@@ -50,7 +44,7 @@ app.add_middleware(
 @app.get("/test")
 def test(request: Request):
     if request.method == 'GET':
-        return JSONResponse(content="Hello World", status_code=200)
+        return JSONResponse(content="Hello world from frontend api", status_code=200)
 
 
 class QueryParameters(BaseModel):
@@ -79,7 +73,7 @@ class QueryParameters(BaseModel):
 
 @app.get("/query")
 async def read_query(request: Request):
-    print(dict(request.query_params))
+    # print(dict(request.query_params))
     query_parameters = QueryParameters(**dict(request.query_params))
 
     if query_parameters.tags:
@@ -87,7 +81,7 @@ async def read_query(request: Request):
     else:
         tags = []
 
-    print(query_parameters.dict().items())
+    # print(query_parameters.dict().items())
 
     filter_params = {}
     for key, value in query_parameters.dict().items():
@@ -101,9 +95,9 @@ async def read_query(request: Request):
     page = query_parameters.p
     limit = query_parameters.l
     
-    print(query)
-    print(tags)
-    print(filter_params)
+    # print(query)
+    # print(tags)
+    # print(filter_params)
 
     # results_query = await cached_search(query_parameters.q, tags, {'kudosCountFrom', 300})
     # results_query = search_engine_client.query("harry", [], {'kudosCountFrom': 300})
@@ -121,6 +115,19 @@ async def read_query(request: Request):
     else:
         results_paginated = results_query[start:end]
     return JSONResponse(content=results_paginated, status_code=200)
+
+
+@app.get("/autocomplete")
+async def read_pair(prefix: str):
+    print(prefix)
+    # if not prefix or prefix == "":
+    #     completions = {}
+    # elif len(prefix.strip()) >= 2:
+    #     completions = search_engine_client.autocomplete(prefix)
+    # else:
+    #     completions = {}
+    completions = search_engine_client.autocomplete(prefix)
+    return JSONResponse(content=completions, status_code=200)
 
 # ===============================================================
 # ========================== CACHING ============================

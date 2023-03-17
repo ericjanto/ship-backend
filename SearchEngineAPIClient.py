@@ -38,10 +38,15 @@ class SearchEngineAPIClient:
         response = requests.get(f'http://{self.ip}:{self.port}/query',json=data)
         return response.json()
     
+    def autocomplete(self, prefix):
+        response = requests.get(f'http://{self.ip}:{self.port}/autocomplete?prefix={prefix}')
+        return response.json()
+    
 if __name__ == '__main__':
-    client = SearchEngineAPIClient('localhost', 5000)
+    client = SearchEngineAPIClient('localhost', 5005)
     # Fix caching:
     #print(len(client.query("\"harry potter\"",[], {})))
     #print(client.query("harry",[], {'singleChapter': True, 'kudosCountFrom': 1000}))
     #print(len(client.query("Who what who were AND (what OR (where AND are you))",[],{})))
-    print(len(client.query("\"Harry * Potter\"",[], {})))
+    # print(len(client.query("\"Harry * Potter\"",[], {})))
+    print(client.autocomplete('test'))
