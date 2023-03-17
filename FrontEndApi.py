@@ -122,6 +122,12 @@ async def read_query(request: Request):
         results_paginated = results_query[start:end]
     return JSONResponse(content=results_paginated, status_code=200)
 
+
+@app.get("/autocomplete")
+async def read_pair(prefix: str):
+    completions = search_engine_client.autocomplete(prefix)
+    return JSONResponse(content=completions, status_code=200)
+
 # ===============================================================
 # ========================== CACHING ============================
 # ===============================================================

@@ -72,6 +72,7 @@ async def startup_event():
     global index
     global metadataIndex
     global index_ip
+    global tag_index
 
     index = PIIClientFlask(index_ip,5001)
     tag_index = TagPIIClientFastAPI(index_ip,5002)
@@ -101,7 +102,10 @@ async def query(request: Request):
     response = docID_2_document([docID for docID,score in results])
     return JSONResponse(content=response, status_code=200)
 
-
+@app.get("/autocomplete")
+async def query(prefix: str):
+    completions = tag_index.get_ranked_autocomplete([(prefix, 5)])
+    return JSONResponse(content=completions, status_code=200)
 
 if __name__ == '__main__':
     if len(sys.argv) != 4:
