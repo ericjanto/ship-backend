@@ -21,20 +21,23 @@ NoneType = type(None)
 class WebScraper():
 
     NoneType = type(None)
-    baseDir = "/home/riotshielder21/IR-backend/"
 
     def __init__(self, esWords: str=""):
         self.piiClientFlask = PIIClientFlask('localhost', 5001)
         self.tagPIIClient = TagPIIClientFastAPI('localhost', 5002)
         self.termCountsClient = TermCountsClient('localhost', 5003)
         self.storyMetadataClient = StoryMetadataClient('localhost', 5004)
-
+        self.baseDir = "/home/riotshielder21/IR-backend/"
         if esWords == "":
             self.wsImporter = WebScraperImporter()
+            self.outputPath =  'data/WebScraperImports/'
+            self.abs = False
         else:
             self.wsImporter = WebScraperImporter(esWords)
+            self.outputPath =  self.baseDir+'data/WebScraperImports/'
+            self.abs = True
 
-        self.outputPath =  'data/WebScraperImports/'
+        
         self.pathCH = 'WebScraped-Chapters/'
         self.pathMD =' WebScraped-Metadata/'
         self.pathTg = 'WebScraped-Tags/'
@@ -55,8 +58,12 @@ class WebScraper():
         # format the date as a string in the format YYYY-MM-DD
         self.yesterday = yesterday_fmt.strftime('%Y-%m-%d')
 
-        self.fName1 = 'scrapes/chapters'+self.yesterday+'.json'
-        self.fName2 = 'scrapes/metaData'+self.yesterday+'.json'  
+        if self.abs:
+            self.fName1 = self.baseDir+'scrapes/chapters'+self.yesterday+'.json'
+            self.fName2 = self.baseDir+'scrapes/metaData'+self.yesterday+'.json'
+        else:
+            self.fName1 = 'scrapes/chapters'+self.yesterday+'.json'
+            self.fName2 = 'scrapes/metaData'+self.yesterday+'.json'
 
         self.meta = 'metadata-{}.bin'.format(self.yesterday)
         self.tags = 'tags-{}.bin'.format(self.yesterday)
