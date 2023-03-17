@@ -149,12 +149,12 @@ class BooleanSearchEngine():
         # Step 2: Expand terms with *
         expandedQueries = []
         position2term = {}
+
         # separate search terms for proximity search
-        separated = False
         if withinProximitySearchMode and len(query) == 3:
             splitPart = query[1].split(",")
             query = [query[0]] + splitPart + [query[-1]]
-            separated = True
+
         for i in range(len(query)):
             if not self.isSymbolTerm(query[i]):
                 position2term[i] = [query[i]]
