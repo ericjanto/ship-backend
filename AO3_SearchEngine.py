@@ -143,7 +143,7 @@ class Search_Engine():
                     query_str = ' OR '.join([f"\"{' '.join(quote)}\"" for quote in quotes])
                 else:
                     query_str = ' OR '.join(or_str)
-                results = set(self.boolean_engine.makeQuery(query_str,debugVerbose=False))
+                results = set(self.boolean_engine.makeQuery(query_str,debugVerbose=True))
             return tag_results if tags else results
     
     def apply_filters(self, docIDs, filter_params):

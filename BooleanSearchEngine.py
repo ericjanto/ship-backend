@@ -564,15 +564,17 @@ class BooleanSearchEngine():
             return docs
         ## TODO: Finish
         result = []
+        all_posting_list = self.index.getPostingList([(term,docID) for term in terms for docID in docs])
+
         for docID in docs:
-            if self.termsOccurWithinProximityInDocument(terms, docID, proximityThreshold):
+            if self.termsOccurWithinProximityInDocument(terms, docID, proximityThreshold,all_posting_list):
                 result.append(docID)
         return sorted(result)
 
-    def termsOccurWithinProximityInDocument(self, terms, docID, proximityThreshold):
+    def termsOccurWithinProximityInDocument(self, terms, docID, proximityThreshold,posting_lists):
         instances = []
         # Build positional list
-        batched_posting_lists = self.index.getPostingList([(term,docID) for term in terms])
+        batched_posting_lists = posting_lists
         for term in terms:
             for pos in batched_posting_lists.get(term,{}).get(str(docID),[]):
                 instances.append((term, pos))
