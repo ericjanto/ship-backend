@@ -1,7 +1,10 @@
 import time
+import datetime
+import TermCountsClient
+import StoryMetadataClient
+import PIIClientFlask
+import TagPIIClientFastAPI
 
-# Run the script once at startup
-exec(open('/path/to/my_script.py').read())
 
 # Schedule the script to run once a day at midnight
 while True:
@@ -9,8 +12,15 @@ while True:
     now = time.localtime()
 
     # If it's midnight, run the script and wait until the next day
-    if now.tm_hour == 12 and now.tm_min == 0:
+    if now.tm_hour == 1 and now.tm_min == 0:
+
+        # Run the script once at startup
         exec(open('./webscrape.py').read())
+        # get yesterday's date
+        yesterday_fmt = datetime.date.today() - datetime.timedelta(days=1)
+
+        # format the date as a string in the format YYYY-MM-DD
+        yesterday = yesterday_fmt.strftime('%Y-%m-%d')
         time.sleep(86400)
     # Otherwise, wait 10 minutes and check again
     else:
