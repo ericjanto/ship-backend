@@ -137,7 +137,8 @@ class BooleanSearchEngine():
 
         # If brackets are mismatched, throw exception for malformed query
         if bracketDepth != 0:
-            raise RuntimeError("Mismatched brackets in search query")
+            print("Mismatched brackets in search query")
+            return []
         query = newQuery
 
         if debugVerbose:
@@ -213,7 +214,8 @@ class BooleanSearchEngine():
                     if self.isWildCard(symbol):
                         exactTerms.append(symbol)
                     elif not self.isSymbolTerm(symbol):
-                        raise RuntimeError("Malformed query, non term symbols should not occur within an exact search ")
+                        print("Malformed query, non term symbols should not occur within an exact search ")
+                        return []
                     elif symbol:                    
                         exactTerms.append(symbol)
                 else:
@@ -240,7 +242,8 @@ class BooleanSearchEngine():
                     proximityThreshold = self.getProximityThresholdFromMarker(symbol)
                 elif symbol == ")#":
                     if not withinProximitySearchMode:
-                        raise RuntimeError("Malformed query, proximity search closed before it was opened")
+                        print("Malformed query, proximity search closed before it was opened")
+                        return []
                     withinProximitySearchMode = False
                     newQuery.append(self.proximitySearch(proximityTerms, proximityThreshold, searchScope))
                     proximityTerms = []
@@ -250,11 +253,13 @@ class BooleanSearchEngine():
                         newQuery.append(symbol)
                     else:
                         if not self.isSymbolTerm(symbol):
-                            raise RuntimeError("Malformed query, non term symbol found inside proximity search")
+                            print("Malformed query, non term symbol found inside proximity search")
+                            return []
                         proximityTerms.append(symbol)
                 i += 1
             if withinProximitySearchMode:
-                raise RuntimeError("Malformed query: proximity search missing closing bracket")
+                print("Malformed query: proximity search missing closing bracket")
+                return []
 
             query = newQuery
 
