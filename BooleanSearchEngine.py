@@ -104,10 +104,35 @@ class BooleanSearchEngine():
 
             elif symbol == ")" and withinProximitySearchMode:
                 newQuery.append(symbol + "#")
-                # withinProximitySearchMode = False
+                withinProximitySearchMode = False
             else:
                 newQuery.append(symbol)
             i += 1
+        query = newQuery
+
+        if withinProximitySearchMode:
+            print("Malformed query: Proximity Search has no closing bracket")
+            return []
+
+        # Forcibly prevent wildcards from occurring within proximity
+        # search, and separate any comma separated terms within a proximity
+        # search that are not space separated
+        newQuery = []
+        withinProximitySearchMode = False
+        for i in range(len(query)):
+            if self.isProximitySearchMarker(query[i]):
+                withinProximitySearchMode = True
+                newQuery.append(query[i])
+            elif query[i] == ")#":
+                withinProximitySearchMode = False
+                newQuery.append(query[i])
+
+            elif withinProximitySearchMode:
+                terms = query[i].split(",")
+                terms = [term.replace("*", "") for term in terms]
+                newQuery += terms
+            else:
+                newQuery.append(query[i])
         query = newQuery
 
         if debugVerbose:
@@ -150,11 +175,6 @@ class BooleanSearchEngine():
         # Step 2: Expand terms with *
         expandedQueries = []
         position2term = {}
-
-        # separate search terms for proximity search
-        if withinProximitySearchMode and len(query) == 3:
-            splitPart = query[1].split(",")
-            query = [query[0]] + splitPart + [query[-1]]
 
         for i in range(len(query)):
             if not self.isSymbolTerm(query[i]):
