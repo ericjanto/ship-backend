@@ -4,6 +4,7 @@ from StoryMetadataLoader import StoryMetadataLoader
 import json
 import sys
 import uvicorn
+import os
 
 app = FastAPI()
 
@@ -82,6 +83,26 @@ async def getStoryDescriptors(request: Request):
         else:
             response[storyID] = dict()
     return JSONResponse(content=response, status_code=200)
+
+@app.put("/mergeWithOtherIndex")
+async def mergeWithOtherIndex(request: Request):
+    global index
+    dateFileNames = await request.body()
+    dateFileNames = json.loads(dateFileNames, parse_int=int)["dateFileNames"]
+    for dateFileName in dateFileNames:
+        path = "./data/WebScraperImports/WebScraped-Metadata/" + dateFileName
+        if os.path.exists(path):
+            StoryMetadataLoader.mergeChunkIntoIndex(index, StoryMetadataLoader.loadFromCompressedFile(path))
+    return JSONResponse(content="Done Merging!", status_code=200)
+
+@app.put("/mergeWithOtherIndexAllDates")
+async def mergeWithOtherIndexAllDates():
+    global index
+    path = "./data/WebScraperImports/WebScraped-Metadata/"
+    # list all files in the directory
+    for fileName in os.listdir(path):
+        StoryMetadataLoader.mergeChunkIntoIndex(index, StoryMetadataLoader.loadFromCompressedFile(path))
+    return JSONResponse(content="Done Merging!", status_code=200)
 
 if __name__ == "__main__":
     global indexFile

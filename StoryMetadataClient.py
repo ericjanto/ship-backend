@@ -1,6 +1,7 @@
 import requests
 import json
 
+
 class StoryMetadataClient:
     def __init__(self, ip, port):
         self.ip = ip
@@ -30,6 +31,15 @@ class StoryMetadataClient:
         data = {'storyIDs': storyIDs}
         response = requests.post(f'http://{self.ip}:{self.port}/getStoryDescriptors', json=data)
         return response.json()
+
+    def mergeWithOtherIndex(self, dateFileNames):
+        data = {'dateFileNames': dateFileNames}
+        response = requests.put(f'http://{self.ip}:{self.port}/mergeWithOtherIndex', json=data)
+        return response.json()
+
+    def mergeWithOtherIndexAllDates(self):
+        response = requests.put(f'http://{self.ip}:{self.port}/mergeWithOtherIndexAllDates')
+        return response.json()
     
 if __name__ == '__main__':
     smClient = StoryMetadataClient('localhost', 5004)    
@@ -57,3 +67,5 @@ if __name__ == '__main__':
     print("3.", smClient.getStats([79104,103637,51028,110078,78803,20392,44456]))
     print("4.", smClient.getLanguage([79104,103637,51028,110078,78803,20392,44456]))
     print("5.", smClient.getStoryDescriptors([79104,103637,51028,110078,78803,20392,44456]))
+    print("6.", smClient.mergeWithOtherIndex(['compressedMetadata.bin']))
+    

@@ -16,7 +16,7 @@ from Preprocessor import Preprocessor
 
 class WebScraperImporter:
 
-    def __init__(self, pathToStopwords: str = "englishStopWords.txt"):
+    def __init__(self, pathToStopwords: str = "/home/riotshielder21/IR-backend/englishStopWords.txt"):
 
         self.stopwords = loadStopWordsIntoSet(pathToStopwords)
 
@@ -114,7 +114,7 @@ class WebScraperImporter:
             language = 1 if language.lower() == "english" else 2
             metadata.language = language
 
-            metadata.wordCount = int(metadataJSON[storyNoStr]["stats"]["words"][1])
+            metadata.wordCount = int(metadataJSON[storyNoStr]["stats"]["words"])
             metadata.commentCount = int(metadataJSON[storyNoStr]["stats"]["comments"])
             metadata.bookmarkCount = int(metadataJSON[storyNoStr]["stats"]["bookmarks"])
             metadata.kudosCount = int(metadataJSON[storyNoStr]["stats"]["kudos"])
