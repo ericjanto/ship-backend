@@ -105,16 +105,14 @@ class BM25_Model():
         N = self.index.getNumDocs()
         tf_dict = self.index.getTermFrequency([(term,doc_no) for term in query for doc_no in doc_nos])
         df_dict = self.index.getDocFrequency(query)
-
         for doc_no in doc_nos:
             doc_score = 0
             for term in query:
-                tf = tf_dict.get(term).get(doc_no,0)
+                tf = tf_dict.get(term).get(str(doc_no),0)
                 df = df_dict.get(term,0)
-                L_d = term_counts.get(doc_no,0)
+                L_d = term_counts.get(str(doc_no),0)
                 avg_L = self.avg_doc_len
-                C_td = (tf/(1-b + b*(L_d/avg_L))) #+ 0.5
-                #term_1 = tf*(k+1)/((tf+k)*(1-0.75+0.75*(L_d/avg_L)))
+                C_td = (tf/(1-b + b*(L_d/avg_L)))
                 term_1 = ((k+1)*(C_td+0.5))/(k+C_td+0.5)
                 term_2 = np.log10(((N+1)/(df+0.5)))
                 doc_score += term_1 * term_2

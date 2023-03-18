@@ -47,13 +47,14 @@ filter_dict = {'singleChapter':False, 'completionStatus':'all', 'language':1,
                 'lastUpdatedFrom':-1, 'lastUpdatedTo':-1}
 
 class Search_Engine():
-    def __init__(self,positionalInvertedIndex,permutermIndexTrie,tagIndex,metadataDict,stopwords,termcounts,cache_size=100):
+    def __init__(self,positionalInvertedIndex,permutermIndexTrie,tagIndex,metadataDict,stopwords,termcounts,cache_size=1000):
         self.index = positionalInvertedIndex
         self.stopwords = stopwords
         self.termcounts = termcounts
         self.permutermIndexTrie = permutermIndexTrie
         self.tagIndex = tagIndex
         self.metadataDict = metadataDict
+        self.fullqueryCache = QueryCache(cache_size)
         self.queryCache = QueryCache(cache_size)
         self.boolean_engine = BooleanSearchEngine(self.index,self.permutermIndexTrie,self.metadataDict,self.stopwords)
         self.ranker = BM25_Model(self.index,self.stopwords,self.termcounts)
@@ -72,43 +73,48 @@ class Search_Engine():
                 'commentCountFrom':-1, 'commentCountTo':-1, 
                 'bookmarkCountFrom':-1, 'bookmarkCountTo':-1, 
                 'lastUpdatedFrom':-1, 'lastUpdatedTo':-1}
+        
+        query_key = query
         for key in kwargs:
             query_filters[key] = kwargs[key]
-
-        original_query = query
-        query = query.replace('"',' " ')
-        query = query.replace('TAG{','TAG{ ')
-        query = query.replace('}',' }')
-        tokens = query.split()
-        new_tokens = []
-        for token in tokens:
-            if not self.proximity_regex.search(token):
-                token = token.replace('(', ' ( ')
-                token = token.replace(')', ' ) ')
-                new_tokens += token.split()
-            else:
-                new_tokens.append(token)
-        tokens = new_tokens
-
-        if not self.queryCache.exists(original_query):
-            doc_IDs = self.recur_connectives(tokens)
-            self.queryCache.push(original_query,doc_IDs)
-        else:
-            doc_IDs = self.queryCache.get(original_query)
+            query_key += f' {key}:{kwargs[key]}'
         
-        tokens = self.tag_regex.sub('',query).split()
-        tokens = [token for token in tokens if '*' not in token]
-        query = ' '.join(tokens)
-        tag_docIDs = set()
-        all_doc_IDs = doc_IDs.union(tag_docIDs)
-        terms = self.ranker.preprocess_query(query)    
-        all_doc_IDs = self.apply_filters(all_doc_IDs,query_filters)
-        doc_score_pairs = dict.fromkeys(all_doc_IDs,0)
-        query_scores = self.ranker.score_documents(terms,all_doc_IDs)
-        for docID,score in query_scores:
-            doc_score_pairs[docID] += score
+        if self.fullqueryCache.exists(query_key):
+            return self.fullqueryCache.get(query_key)
+        else:
+            original_query = query
+            query = query.replace('"',' " ')
+            query = query.replace('TAG{','TAG{ ')
+            query = query.replace('}',' }')
+            tokens = query.split()
+            new_tokens = []
+            for token in tokens:
+                if not self.proximity_regex.search(token):
+                    token = token.replace('(', ' ( ')
+                    token = token.replace(')', ' ) ')
+                    new_tokens += token.split()
+                else:
+                    new_tokens.append(token)
+            tokens = new_tokens
 
-        final_results = sorted(doc_score_pairs.items(),key=lambda x: x[1], reverse=True)
+            if self.queryCache.exists(original_query):
+                all_doc_IDs = self.queryCache.get(original_query)
+            else:
+                all_doc_IDs = self.recur_connectives(tokens)
+                self.queryCache.push(original_query,all_doc_IDs)
+                
+            tokens = self.tag_regex.sub('',query).split()
+            tokens = [token for token in tokens if '*' not in token]
+            query = ' '.join(tokens)
+            terms = self.ranker.preprocess_query(query)    
+            all_doc_IDs = self.apply_filters(all_doc_IDs,query_filters)
+            doc_score_pairs = dict.fromkeys(all_doc_IDs,0)
+            query_scores = self.ranker.score_documents(terms,all_doc_IDs)
+            for docID,score in query_scores:
+                doc_score_pairs[docID] += score
+
+            final_results = sorted(doc_score_pairs.items(),key=lambda x: x[1], reverse=True)
+            self.fullqueryCache.push(query_key,final_results)
         return final_results
 
     def recur_connectives(self,subquery):
@@ -256,25 +262,6 @@ class Search_Engine():
         for tag in temp_tags:
             docIDs = docIDs.intersection(set([storyID*1000 for storyID in tag_search_results[tag]]))
         return docIDs
-
-    def score_tag_docs(self, tags, docIDs):
-        k = 1.5
-        b = 0.75
-        results = []
-        for doc_ID in docIDs:
-            doc_score = 0
-            for token in tags:
-                tf = 1
-                df = self.tagIndex.getTagFrequency(token)
-                L_d = self.termcounts[doc_ID][1]
-                avg_L = self.avg_doc_len
-                N = self.index.getNumDocs()
-                C_td = (tf/(1-b + b*(L_d/avg_L))) + 0.5
-                term_1 = ((k+1)*C_td)/(k+C_td)
-                term_2 = np.log10(((N+1)/(df+0.5)))
-                doc_score += term_1 * term_2
-            results += [[doc_ID,doc_score]]
-        return results
     
     def check_args(self,args):
         return all([key in filter_dict.keys() for key in args]) 

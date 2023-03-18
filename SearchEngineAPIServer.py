@@ -78,7 +78,7 @@ async def startup_event():
     tag_index = TagPIIClientFastAPI(index_ip,5002)
     term_counts = TermCountsClient(index_ip,5003)
     metadataIndex = StoryMetadataClient(index_ip,5004)
-    permuter_terms = pd.read_pickle('data/doc-terms.pickle')
+    permuter_terms = pd.read_pickle('data/filtered-doc-terms-full.pickle')
     permuterm_trie = create_permuterm_index_trie(permuter_terms)
     stopwords = loadStopWordsIntoSet('englishStopWords.txt')
     search_engine = Search_Engine(index,permuterm_trie,tag_index,metadataIndex,stopwords,term_counts)
