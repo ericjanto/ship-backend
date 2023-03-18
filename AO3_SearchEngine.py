@@ -9,6 +9,7 @@ from QueryCache import QueryCache
 import pickle
 import numpy as np
 import re
+import copy
 
 query_examples = ["Who what who were AND (what OR (where AND are you))",
                   "supernatural and doctor who superwholock",
@@ -143,7 +144,7 @@ class Search_Engine():
                     query_str = ' OR '.join([f"\"{' '.join(quote)}\"" for quote in quotes])
                 else:
                     query_str = ' OR '.join(or_str)
-                results = set(self.boolean_engine.makeQuery(query_str,debugVerbose=True))
+                results = set(self.boolean_engine.makeQuery(query_str,debugVerbose=False))
             return tag_results if tags else results
     
     def apply_filters(self, docIDs, filter_params):
@@ -205,8 +206,8 @@ class Search_Engine():
         return (lowerBound == -1 or parameter >= lowerBound) and (upperBound == -1 or parameter <= upperBound)
 
     def bracketed_split(self,string, delimiter, strip_brackets=False):
-        openers = ['(','TAG{']
-        closers = [')','}']
+        openers = ['(']
+        closers = [')']
         split_query = []
         current_string = []
         depth = 0
@@ -249,10 +250,10 @@ class Search_Engine():
         return quotes,or_str
 
     def tag_search(self, tags):
-        tag_search_results = self.tagIndex.getStoryIDsWithTag(tags)
-
-        docIDs = set([storyID*1000 for storyID in tag_search_results[tags.pop()]])
-        for tag in tags:
+        temp_tags = copy.deepcopy(tags)
+        tag_search_results = self.tagIndex.getStoryIDsWithTag(temp_tags)
+        docIDs = set([storyID*1000 for storyID in tag_search_results[temp_tags.pop()]])
+        for tag in temp_tags:
             docIDs = docIDs.intersection(set([storyID*1000 for storyID in tag_search_results[tag]]))
         return docIDs
 

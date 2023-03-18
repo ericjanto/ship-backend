@@ -22,16 +22,17 @@ app = FastAPI()
 # seach_engine = load_search_engine()
 # metadata = load_metadata()
 
-origins = [
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "http://localhost:3002",
-    "http://localhost:3003",
-    "http://localhost:3004",
-    "http://localhost:3005",
-    "https://search.storyhunter.live"
-    "localhost"
-]
+#origins = [
+#    "http://localhost:3000",
+#    "http://localhost:3001",
+#    "http://localhost:3002",
+#    "http://localhost:3003",
+#    "http://localhost:3004",
+#    "http://localhost:3005",
+#    "https://search.storyhunter.live"
+#    "localhost"
+#]
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,

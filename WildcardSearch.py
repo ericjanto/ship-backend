@@ -95,7 +95,7 @@ def create_permuterm_index_trie(terms, verbose=True):
     total_terms = len(terms)
     skipped_terms = 0
     for i, term in enumerate(terms):
-        if len(term) > 50:
+        if len(term) > 15:
             skipped_terms += 1
             continue
         dollar_terms = get_all_dollar_terms(term)
